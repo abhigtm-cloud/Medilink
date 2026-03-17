@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "222538830642",
+    "firebase_url": "https://medilink-cc25b-default-rtdb.firebaseio.com",
+    "project_id": "medilink-cc25b",
+    "storage_bucket": "medilink-cc25b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:222538830642:android:39c5a6884635933c85fd2b",
+        "android_client_info": {
+          "package_name": "com.example.medilink"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdNbJsyI6lnPRUVDi3UoUaBMlNg6RZUgA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
