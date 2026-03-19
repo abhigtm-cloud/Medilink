@@ -1,10 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medilink/features/home/models/doctor.dart';
 import 'package:medilink/features/home/repositories/doctor_repository.dart';
+import 'package:medilink/features/home/repositories/slot_repository.dart';
+import 'package:medilink/features/home/repositories/booking_repository.dart';
 
 /// Provides a singleton instance of [DoctorRepository].
 final doctorRepositoryProvider = Provider<DoctorRepository>((ref) {
   return DoctorRepository();
+});
+
+/// Provides a singleton instance of [SlotRepository].
+final slotRepositoryProvider = Provider<SlotRepository>((ref) {
+  return SlotRepository();
+});
+
+/// Provides a singleton instance of [BookingRepository].
+final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
+  return BookingRepository();
 });
 
 /// Returns doctors for a specific hospital
@@ -55,6 +67,31 @@ class DoctorController extends StateNotifier<AsyncValue<Doctor?>> {
       }
       state = AsyncValue.data(null);
 
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  /// Delete a doctor and all related slots and bookings
+  Future<void> deleteDoctor(String hospitalId, String doctorId) async {
+    state = const AsyncValue.loading();
+    try {
+      final slotRepo = _read.read(slotRepositoryProvider);
+      final bookingRepo = _read.read(bookingRepositoryProvider);
+
+      // Delete all slots for this doctor
+      await slotRepo.deleteSlotsByDoctor(hospitalId, doctorId);
+
+      // Delete all bookings for this doctor
+      await bookingRepo.deleteBookingsByDoctor(hospitalId, doctorId);
+
+      // Finally, delete the doctor
+      await _repo.deleteDoctor(hospitalId, doctorId);
+
+      // Invalidate cache
+      await _read.refresh(getDoctorsByHospitalProvider(hospitalId));
+
+      state = AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }

@@ -8,19 +8,11 @@ final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
   return BookingRepository();
 });
 
-/// Returns bookings for the current user
-final getUserBookingsProvider = FutureProvider<List<Booking>>((ref) async {
-  final authState = ref.watch(authStateChangesProvider);
+/// Returns bookings for a specific user
+final getBookingsByUserProvider =
+    FutureProvider.family<List<Booking>, String>((ref, userId) async {
   final repo = ref.watch(bookingRepositoryProvider);
-  
-  return authState.when(
-    data: (user) {
-      if (user == null) return [];
-      return repo.getBookingsByUser(user.uid);
-    },
-    loading: () => [],
-    error: (_, __) => [],
-  );
+  return repo.getBookingsByUser(userId);
 });
 
 /// StateNotifier for managing bookings

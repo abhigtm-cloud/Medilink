@@ -63,4 +63,120 @@ class BookingRepository {
       throw Exception('Failed to cancel booking: $e');
     }
   }
+
+  /// Delete all bookings for a user
+  Future<void> deleteBookingsByUser(String userId) async {
+    try {
+      final snapshot = await _database.child(_bookingsPath).get();
+      
+      if (!snapshot.exists) {
+        return;
+      }
+      
+      final data = snapshot.value as Map<dynamic, dynamic>? ?? {};
+      
+      // Delete each booking belonging to the user
+      for (final key in data.keys) {
+        final value = data[key];
+        if (value is Map<dynamic, dynamic>) {
+          final booking = value;
+          if (booking['userId'] == userId) {
+            await _database.child(_bookingsPath).child(key).remove();
+          }
+        }
+      }
+    } catch (e) {
+      throw Exception('Failed to delete user bookings: $e');
+    }
+  }
+
+  /// Get bookings for a specific doctor
+  Future<List<Booking>> getBookingsByDoctor(
+    String hospitalId,
+    String doctorId,
+  ) async {
+    try {
+      final snapshot = await _database.child(_bookingsPath).get();
+      
+      if (!snapshot.exists) {
+        return [];
+      }
+      
+      final bookings = <Booking>[];
+      final data = snapshot.value as Map<dynamic, dynamic>? ?? {};
+      
+      data.forEach((key, value) {
+        if (value is Map<dynamic, dynamic>) {
+          final booking = Booking.fromJson(
+            Map<String, dynamic>.from(value),
+            docId: key,
+          );
+          // Filter by doctor
+          if (booking.doctorId == doctorId && booking.hospitalId == hospitalId) {
+            bookings.add(booking);
+          }
+        }
+      });
+      
+      return bookings;
+    } catch (e) {
+      throw Exception('Failed to fetch doctor bookings: $e');
+    }
+  }
+
+  /// Delete all bookings for a doctor
+  Future<void> deleteBookingsByDoctor(
+    String hospitalId,
+    String doctorId,
+  ) async {
+    try {
+      final snapshot = await _database.child(_bookingsPath).get();
+      
+      if (!snapshot.exists) {
+        return;
+      }
+      
+      final data = snapshot.value as Map<dynamic, dynamic>? ?? {};
+      
+      // Delete each booking for the doctor
+      for (final key in data.keys) {
+        final value = data[key];
+        if (value is Map<dynamic, dynamic>) {
+          final booking = value;
+          if (booking['doctorId'] == doctorId &&
+              booking['hospitalId'] == hospitalId) {
+            await _database.child(_bookingsPath).child(key).remove();
+          }
+        }
+      }
+    } catch (e) {
+      throw Exception('Failed to delete doctor bookings: $e');
+    }
+  }
+
+  /// Delete all bookings for a hospital
+  Future<void> deleteBookingsByHospital(String hospitalId) async {
+    try {
+      final snapshot = await _database.child(_bookingsPath).get();
+      
+      if (!snapshot.exists) {
+        return;
+      }
+      
+      final data = snapshot.value as Map<dynamic, dynamic>? ?? {};
+      
+      // Delete each booking for the hospital
+      for (final key in data.keys) {
+        final value = data[key];
+        if (value is Map<dynamic, dynamic>) {
+          final booking = value;
+          if (booking['hospitalId'] == hospitalId) {
+            await _database.child(_bookingsPath).child(key).remove();
+          }
+        }
+      }
+    } catch (e) {
+      throw Exception('Failed to delete hospital bookings: $e');
+    }
+  }
 }

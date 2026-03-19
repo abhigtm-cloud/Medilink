@@ -34,6 +34,37 @@ class AdminDashboardScreen extends ConsumerWidget {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: 'Delete Account',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Delete Account'),
+                  content: const Text(
+                    'Warning: This will delete your account and all your hospitals, doctors, slots, and bookings permanently. This action cannot be undone.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ref.read(authControllerProvider.notifier).deleteAccount();
+                      },
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Logout',
             onPressed: () {
@@ -170,7 +201,7 @@ class AdminDashboardScreen extends ConsumerWidget {
   }
 }
 
-class HospitalCard extends StatelessWidget {
+class HospitalCard extends ConsumerWidget {
   final hospital;
   final VoidCallback onTap;
 
@@ -181,7 +212,7 @@ class HospitalCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
@@ -197,7 +228,47 @@ class HospitalCard extends StatelessWidget {
             Text(hospital.contact),
           ],
         ),
-        trailing: const Icon(Icons.arrow_forward),
+        trailing: PopupMenuButton(
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              child: const Text('Delete'),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Delete Hospital'),
+                    content: Text(
+                      'Are you sure you want to delete ${hospital.name}? All doctors, slots, and bookings will be deleted.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ref
+                              .read(hospitalControllerProvider.notifier)
+                              .deleteHospital(hospital.id!);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Hospital deleted successfully'),
+                            ),
+                          );
+                        },
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
         isThreeLine: true,
       ),
     );

@@ -39,21 +39,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     
-    print('DEBUG: Attempting sign-in with email: $email');
+    print('DEBUG: LoginScreen - Attempting sign-in with email: $email');
     
     try {
+      // Call sign in - this will update Firebase Auth
       await ref.read(authControllerProvider.notifier).signIn(email, password);
-      print('DEBUG: Sign-in successful for $email');
+      print('DEBUG: LoginScreen - Sign-in completed');
       
-      // Wait for authStateChanges to update - longer timeout
+      // Show loading indicator while Firebase auth state updates
+      // main.dart will handle navigation automatically
       if (mounted) {
-        await Future.delayed(const Duration(seconds: 1));
-        print('DEBUG: Navigation should occur now via authStateChangesProvider');
-        // The app.dart will automatically navigate to HomeScreen via authStateChangesProvider
+        print('DEBUG: LoginScreen - Waiting for Firebase to propagate auth state');
       }
     } catch (e) {
-      print('DEBUG: Sign-in error: $e');
-      // Error is already handled by authControllerProvider
+      print('DEBUG: LoginScreen - Sign-in error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Sign in failed: $e')),
@@ -65,9 +64,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
+    final firebaseAuthState = ref.watch(authStateChangesProvider);
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
     final isTablet = screenWidth >= 600 && screenWidth < 768;
+
+    // Check if we've been authenticated (this handles cases where polling might miss it)
+    firebaseAuthState.whenData((user) {
+      if (user != null && mounted) {
+        print('DEBUG: LoginScreen - Firebase user detected: ${user.email}');
+        // Navigation will happen automatically via main.dart
+      }
+    });
 
     return Scaffold(
       body: Stack(

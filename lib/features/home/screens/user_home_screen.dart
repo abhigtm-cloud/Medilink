@@ -18,36 +18,7 @@ class UserHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
-  final TextEditingController _searchController = TextEditingController();
   int _selectedBottomNav = 0;
-  String _searchQuery = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  List<Hospital> _filterHospitals(List<Hospital> hospitals) {
-    if (_searchQuery.isEmpty) {
-      return hospitals;
-    }
-    return hospitals
-        .where((hospital) =>
-            hospital.name.toLowerCase().contains(_searchQuery) ||
-            hospital.address.toLowerCase().contains(_searchQuery))
-        .toList();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +33,6 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildLocationSection(),
-              _buildSearchBar(),
               _buildPromoSection(),
               _buildNearbyHospitalsSection(),
             ],
@@ -311,38 +281,6 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: 'Search hospitals...',
-          hintStyle:
-              const TextStyle(color: Color(0xFFD1D5DB), fontSize: 14),
-          prefixIcon: const Icon(Icons.search, color: Color(0xFF20B2AA)),
-          filled: true,
-          fillColor: const Color(0xFFF5F5F5),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: Color(0xFF20B2AA), width: 1.5),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildPromoSection() {
     return Container(
       color: Colors.white,
@@ -438,9 +376,7 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
         ),
         hospitalsAsync.when(
           data: (hospitals) {
-            final filteredHospitals = _filterHospitals(hospitals);
-            
-            if (filteredHospitals.isEmpty) {
+            if (hospitals.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32),
                 child: Center(
@@ -461,9 +397,9 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
             return ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: filteredHospitals.length,
+              itemCount: hospitals.length,
               itemBuilder: (context, index) =>
-                  _buildHospitalCard(filteredHospitals[index]),
+                  _buildHospitalCard(hospitals[index]),
             );
           },
           loading: () => Padding(

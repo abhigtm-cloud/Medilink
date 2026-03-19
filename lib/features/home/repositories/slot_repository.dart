@@ -98,4 +98,29 @@ class SlotRepository {
       throw Exception('Failed to book slot: $e');
     }
   }
+
+  /// Delete all slots for a doctor
+  Future<void> deleteSlotsByDoctor(String hospitalId, String doctorId) async {
+    try {
+      await _database
+          .child(_slotsPath)
+          .child(hospitalId)
+          .child(doctorId)
+          .remove();
+    } catch (e) {
+      throw Exception('Failed to delete doctor slots: $e');
+    }
+  }
+
+  /// Delete all slots for a hospital
+  Future<void> deleteSlotsByHospital(String hospitalId) async {
+    try {
+      await _database
+          .child(_slotsPath)
+          .child(hospitalId)
+          .remove();
+    } catch (e) {
+      throw Exception('Failed to delete hospital slots: $e');
+    }
+  }
 }

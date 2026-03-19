@@ -11,31 +11,43 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authStream = ref.watch(authStateChangesProvider);
+    // Get the current authenticated user directly
+    final authState = ref.watch(authStateChangesProvider);
 
-    return authStream.when(
+    // Since we only reach here when user is not null (from main.dart),
+    // we can safely use the data
+    return authState.when(
       data: (user) {
         if (user == null) {
+          // This shouldn't happen, but handle it just in case
           return const Scaffold(
             body: Center(child: Text('User not authenticated')),
           );
         }
 
-        print('DEBUG: User = ${user.email}, Role = ${user.role.displayName}');
+        print('DEBUG: HomeScreen - User = ${user.email}, Role = ${user.role.displayName}');
 
         // Route based on user role
         if (user.role.isHospitalAdmin) {
+          print('DEBUG: Routing to AdminDashboardScreen');
           return const AdminDashboardScreen();
         } else {
+          print('DEBUG: Routing to UserHomeScreen');
           return const UserHomeScreen();
         }
       },
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (error, st) => Scaffold(
-        body: Center(child: Text('Error: $error')),
-      ),
+      loading: () {
+        print('DEBUG: HomeScreen loading...');
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      },
+      error: (error, st) {
+        print('DEBUG: HomeScreen error: $error');
+        return Scaffold(
+          body: Center(child: Text('Error: $error')),
+        );
+      },
     );
   }
 }

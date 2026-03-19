@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:medilink/features/auth/screens/login_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:medilink/features/auth/providers/auth_providers.dart';
 
 /// Account Screen showing user profile and settings.
-class AccountScreen extends StatefulWidget {
+class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
 
   @override
-  State<AccountScreen> createState() => _AccountScreenState();
+  ConsumerState<AccountScreen> createState() => _AccountScreenState();
 }
 
-class _AccountScreenState extends State<AccountScreen> {
+class _AccountScreenState extends ConsumerState<AccountScreen> {
   final userProfile = {
     'name': 'John Doe',
     'email': 'john.doe@example.com',
@@ -178,6 +179,57 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
           const SizedBox(height: 24),
 
+          // Delete Account Button (Danger Zone)
+          SizedBox(
+            height: 48,
+            child: FilledButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Delete Account'),
+                    content: const Text(
+                      'Warning: This will permanently delete your account and all your bookings. This action cannot be undone.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ref
+                              .read(authControllerProvider.notifier)
+                              .deleteAccount();
+                        },
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red.shade300,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                'Delete Account',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
           // Logout Button
           SizedBox(
             height: 48,
@@ -198,13 +250,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       TextButton(
                         onPressed: () {
                           Navigator.pop(context);
-                          // Navigate to login screen
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                            (route) => false,
-                          );
+                          ref.read(authControllerProvider.notifier).signOut();
                         },
                         child: const Text('Logout'),
                       ),

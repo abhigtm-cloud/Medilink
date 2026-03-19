@@ -117,6 +117,16 @@ class HospitalRepository {
     }
   }
   
+  /// Check if admin already has a hospital created
+  Future<bool> adminHasHospital(String adminId) async {
+    try {
+      final hospitals = await getHospitalsByAdmin(adminId);
+      return hospitals.isNotEmpty;
+    } catch (e) {
+      throw Exception('Failed to check hospital count: $e');
+    }
+  }
+
   /// Delete a hospital
   Future<void> deleteHospital(String hospitalId) async {
     try {

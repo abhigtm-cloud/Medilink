@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
+import 'package:medilink/features/home/screens/add_doctor_screen.dart';
 
 class HospitalDetailScreen extends ConsumerWidget {
   final String hospitalId;
@@ -19,6 +20,25 @@ class HospitalDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hospital Details'),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          hospitalAsync.whenData((hospital) {
+            if (hospital != null) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => AddDoctorScreen(
+                    hospitalId: hospitalId,
+                    hospitalName: hospital.name,
+                  ),
+                ),
+              );
+            }
+          });
+        },
+        icon: const Icon(Icons.person_add),
+        label: const Text('Add Doctor'),
+        backgroundColor: const Color(0xFF20B2AA),
       ),
       body: hospitalAsync.when(
         data: (hospital) {
@@ -88,15 +108,68 @@ class HospitalDetailScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  doctor.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            doctor.name,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(doctor.specialization),
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuButton(
+                                      itemBuilder: (context) => [
+                                        PopupMenuItem(
+                                          child: const Text('Delete'),
+                                          onTap: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: const Text('Delete Doctor'),
+                                                content: Text(
+                                                  'Are you sure you want to delete ${doctor.name}? All related slots and bookings will be deleted.',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(context),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  ElevatedButton(
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: Colors.red,
+                                                    ),
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                      ref
+                                                          .read(doctorControllerProvider.notifier)
+                                                          .deleteDoctor(hospitalId, doctor.id!);
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        const SnackBar(
+                                                          content: Text('Doctor deleted successfully'),
+                                                        ),
+                                                      );
+                                                    },
+                                                    child: const Text('Delete'),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 4),
-                                Text(doctor.specialization),
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [

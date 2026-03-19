@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medilink/features/home/models/hospital.dart';
 import 'package:medilink/features/home/repositories/hospital_repository.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
+import 'package:medilink/features/auth/models/app_user.dart';
 
 /// Provides a singleton instance of [HospitalRepository].
 final hospitalRepositoryProvider = Provider<HospitalRepository>((ref) {
@@ -55,12 +56,36 @@ class HospitalController extends StateNotifier<AsyncValue<Hospital?>> {
       if (user == null) {
         throw Exception('User not authenticated');
       }
+
+      // Check if admin already has a hospital
+      if (user.role.isHospitalAdmin) {
+        final hasHospital = await _repo.adminHasHospital(user.uid);
+        if (hasHospital) {
+          throw Exception('Hospital admins can only create one hospital');
+        }
+      }
       
       final createdHospital = await _repo.createHospital(
         hospital.copyWith(createdAt: DateTime.now()),
         user.uid,
       );
       state = AsyncValue.data(createdHospital);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+  
+  Future<void> deleteHospital(String hospitalId) async {
+    state = const AsyncValue.loading();
+    try {
+      // Delete hospital and all related data
+      await _repo.deleteHospital(hospitalId);
+      
+      // Invalidate cache
+      await _read.refresh(getAdminHospitalsProvider);
+      await _read.refresh(getAllHospitalsProvider);
+      
+      state = AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
