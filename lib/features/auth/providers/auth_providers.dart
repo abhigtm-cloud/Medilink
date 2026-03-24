@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:medilink/features/auth/models/app_user.dart';
 import 'package:medilink/features/auth/repositories/auth_repository.dart';
 import 'package:medilink/features/home/repositories/hospital_repository.dart';
@@ -35,27 +35,13 @@ final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
 /// A synchronous representation of the current [AppUser] state.
 final authStateChangesProvider = StreamProvider<AppUser?>((ref) {
   final repo = ref.watch(authRepositoryProvider);
-  final stream = repo.authStateChanges();
-  
-  // Add timeout and error handling
-  return stream
-      .timeout(
-        const Duration(seconds: 10),
-        onTimeout: (sink) {
-          print('DEBUG: authStateChangesProvider - Stream timeout after 10 seconds');
-          print('DEBUG: authStateChangesProvider - Current user from Firebase: ${FirebaseAuth.instance.currentUser?.email}');
-          // If stream times out, check current user directly
-          final currentUser = FirebaseAuth.instance.currentUser;
-          if (currentUser != null) {
-            final appUser = AppUser.create(
-              uid: currentUser.uid,
-              email: currentUser.email ?? '',
-              displayName: currentUser.displayName,
-            );
-            sink.add(appUser);
-          }
-        },
-      );
+  return repo.authStateChanges().asBroadcastStream().timeout(
+    const Duration(seconds: 20),
+    onTimeout: (sink) {
+      print('DEBUG: authStateChangesProvider - Stream timeout');
+      sink.addError(Exception('Authentication timeout - please check your connection'));
+    },
+  );
 });
 
 /// StateNotifier responsible for handling explicit login / logout actions.
@@ -69,26 +55,56 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
   Future<void> signIn(String email, String password) async {
     state = const AsyncValue.loading();
     try {
+      print('DEBUG: AuthController.signIn - Starting sign-in for: $email');
       final user = await _repo.signInWithEmailAndPassword(
         email: email,
         password: password,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException('Sign-in took too long. Please check your internet connection.');
+        },
       );
+      
       state = AsyncValue.data(user);
+      print('DEBUG: AuthController.signIn - Sign-in successful for: $email');
+      print('DEBUG: AuthController.signIn - User role: ${user.role.displayName}');
+      
+      // Force refresh the auth state stream to ensure it emits the new user
+      print('DEBUG: AuthController.signIn - Triggering authStateChangesProvider refresh');
+      _read.refresh(authStateChangesProvider);
+      
     } catch (e, st) {
+      print('DEBUG: AuthController.signIn - Error for user $email: $e');
       state = AsyncValue.error(e, st);
+      throw Exception(_formatFirebaseError(e));
     }
   }
 
   Future<void> register(String email, String password) async {
     state = const AsyncValue.loading();
     try {
+      print('DEBUG: AuthController.register - Starting registration for: $email');
       final user = await _repo.registerWithEmailAndPassword(
         email: email,
         password: password,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException('Registration took too long. Please check your internet connection.');
+        },
       );
       state = AsyncValue.data(user);
+      print('DEBUG: AuthController.register - Registration successful for: $email');
+      
+      // Force refresh the auth state stream
+      print('DEBUG: AuthController.register - Triggering authStateChangesProvider refresh');
+      _read.refresh(authStateChangesProvider);
+      
     } catch (e, st) {
+      print('DEBUG: AuthController.register - Error for user $email: $e');
       state = AsyncValue.error(e, st);
+      throw Exception(_formatFirebaseError(e));
     }
   }
 
@@ -150,6 +166,31 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
   void clearError() {
     if (state.hasError) state = const AsyncValue.data(null);
   }
+
+  /// Formats Firebase authentication errors for user display
+  static String _formatFirebaseError(Object error) {
+    final msg = error.toString();
+    if (msg.contains('user-not-found')) {
+      return 'No account found with this email address.';
+    }
+    if (msg.contains('wrong-password') || msg.contains('invalid-credential')) {
+      return 'Invalid email or password. Please try again.';
+    }
+    if (msg.contains('invalid-email')) {
+      return 'Please enter a valid email address.';
+    }
+    if (msg.contains('too-many-requests')) {
+      return 'Too many failed login attempts. Please try again later.';
+    }
+    if (msg.contains('user-disabled')) {
+      return 'This account has been disabled.';
+    }
+    if (msg.contains('network-request-failed') || msg.contains('TimeoutException')) {
+      return 'Network error. Please check your internet connection.';
+    }
+    return 'An error occurred during sign-in. Please try again.';
+  }
+
 }
 
 /// Public provider exposing the [AuthController].

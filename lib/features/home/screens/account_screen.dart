@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:medilink/core/theme/app_colors.dart';
+import 'package:medilink/core/theme/app_theme.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
 
 /// Account Screen showing user profile and settings.
@@ -24,14 +26,14 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.surfaceLight,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardLight,
         elevation: 1,
-        title: const Text(
+        title: Text(
           'My Account',
           style: TextStyle(
-            color: Color(0xFF1A1A2E),
+            color: AppColors.primary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
@@ -46,15 +48,10 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              color: AppColors.cardLight,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.borderLight, width: 1),
+              boxShadow: AppTheme.cardShadow,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -63,30 +60,30 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF20B2AA).withOpacity(0.1),
+                    color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(40),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.account_circle,
                     size: 60,
-                    color: Color(0xFF20B2AA),
+                    color: AppColors.primary,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   userProfile['name'] as String,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
+                    color: AppColors.textPrimaryLight,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   userProfile['email'] as String,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.textSecondaryLight,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -100,8 +97,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                     );
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF20B2AA),
-                    side: const BorderSide(color: Color(0xFF20B2AA)),
+                    foregroundColor: AppColors.primary,
+                    side: BorderSide(color: AppColors.primary),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
                       vertical: 10,
@@ -115,12 +112,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           const SizedBox(height: 24),
 
           // Personal Information
-          const Text(
+          Text(
             'Personal Information',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A2E),
+              color: AppColors.textPrimaryLight,
             ),
           ),
           const SizedBox(height: 12),
@@ -132,12 +129,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           const SizedBox(height: 24),
 
           // Settings Section
-          const Text(
+          Text(
             'Settings',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A2E),
+              color: AppColors.textPrimaryLight,
             ),
           ),
           const SizedBox(height: 12),
@@ -198,7 +195,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                       ),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                          backgroundColor: AppColors.error,
                         ),
                         onPressed: () {
                           Navigator.pop(context);
@@ -213,12 +210,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 );
               },
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.red.shade300,
+                backgroundColor: AppColors.error,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Delete Account',
                 style: TextStyle(
                   fontSize: 14,
@@ -259,9 +256,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 );
               },
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: const Text(
@@ -269,6 +266,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -283,26 +281,26 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        color: AppColors.cardLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight, width: 1),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: Color(0xFF6B7280),
+              color: AppColors.textSecondaryLight,
               fontWeight: FontWeight.w500,
             ),
           ),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: Color(0xFF1A1A2E),
+              color: AppColors.textPrimaryLight,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -322,9 +320,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          color: AppColors.cardLight,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderLight, width: 1),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -333,23 +331,23 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               children: [
                 Icon(
                   icon,
-                  color: const Color(0xFF20B2AA),
+                  color: AppColors.primary,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF1A1A2E),
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right,
-              color: Color(0xFF6B7280),
+              color: AppColors.textSecondaryLight,
               size: 20,
             ),
           ],

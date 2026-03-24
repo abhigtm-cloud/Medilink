@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:medilink/core/theme/app_colors.dart';
+import 'package:medilink/core/theme/app_theme.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
 import 'package:medilink/features/home/providers/booking_provider.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
@@ -24,19 +26,20 @@ class BookingsScreen extends ConsumerWidget {
         final bookingsAsync = ref.watch(getBookingsByUserProvider(user.uid));
 
         return Scaffold(
-          backgroundColor: const Color(0xFFFAFAFA),
+          backgroundColor: AppColors.surfaceLight,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.cardLight,
             elevation: 1,
-            title: const Text(
+            title: Text(
               'My Bookings',
               style: TextStyle(
-                color: Color(0xFF1A1A2E),
+                color: AppColors.primary,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
               ),
             ),
             centerTitle: false,
+            iconTheme: IconThemeData(color: AppColors.primary),
           ),
           body: bookingsAsync.when(
             data: (allBookings) {
@@ -68,12 +71,12 @@ class BookingsScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Upcoming Appointments
-                    const Text(
+                    Text(
                       'Upcoming Appointments',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A2E),
+                        color: AppColors.textPrimaryLight,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -81,14 +84,16 @@ class BookingsScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                          color: AppColors.cardLight,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.borderLight, width: 1),
+                          boxShadow: AppTheme.cardShadow,
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
                             'No upcoming appointments',
                             style: TextStyle(
-                              color: Color(0xFF6B7280),
+                              color: AppColors.textSecondaryLight,
                               fontSize: 14,
                             ),
                           ),
@@ -105,12 +110,12 @@ class BookingsScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
 
                     // Past Appointments
-                    const Text(
+                    Text(
                       'Past Appointments',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A2E),
+                        color: AppColors.textPrimaryLight,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -118,14 +123,16 @@ class BookingsScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                          color: AppColors.cardLight,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.borderLight, width: 1),
+                          boxShadow: AppTheme.cardShadow,
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
                             'No past appointments',
                             style: TextStyle(
-                              color: Color(0xFF6B7280),
+                              color: AppColors.textSecondaryLight,
                               fontSize: 14,
                             ),
                           ),
@@ -147,20 +154,31 @@ class BookingsScreen extends ConsumerWidget {
               body: Center(child: CircularProgressIndicator()),
             ),
             error: (error, st) => Scaffold(
+              backgroundColor: AppColors.surfaceLight,
               body: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    Icon(Icons.error_outline, size: 48, color: AppColors.error),
                     const SizedBox(height: 16),
-                    const Text('Error loading bookings'),
+                    Text(
+                      'Error loading bookings',
+                      style: TextStyle(
+                        color: AppColors.textPrimaryLight,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(
                         'Error: $error',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 12),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondaryLight,
+                        ),
                       ),
                     ),
                   ],
@@ -215,15 +233,10 @@ class _BookingCardWidget extends ConsumerWidget {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                color: AppColors.cardLight,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderLight, width: 1),
+                boxShadow: AppTheme.cardShadow,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,18 +250,18 @@ class _BookingCardWidget extends ConsumerWidget {
                           children: [
                             Text(
                               doctor?.name ?? 'Unknown Doctor',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF1A1A2E),
+                                color: AppColors.textPrimaryLight,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               doctor?.specialization ?? 'Unknown Specialization',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Color(0xFF6B7280),
+                                color: AppColors.textSecondaryLight,
                               ),
                             ),
                           ],
@@ -261,9 +274,9 @@ class _BookingCardWidget extends ConsumerWidget {
                         ),
                         decoration: BoxDecoration(
                           color: isUpcoming
-                              ? const Color(0xFF20B2AA).withOpacity(0.1)
-                              : Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
+                              ? AppColors.primary.withOpacity(0.1)
+                              : AppColors.textSecondaryLight.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           isUpcoming ? 'Upcoming' : 'Completed',
@@ -271,8 +284,8 @@ class _BookingCardWidget extends ConsumerWidget {
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: isUpcoming
-                                ? const Color(0xFF20B2AA)
-                                : Colors.grey[600],
+                                ? AppColors.primary
+                                : AppColors.textSecondaryLight,
                           ),
                         ),
                       ),
@@ -284,7 +297,7 @@ class _BookingCardWidget extends ConsumerWidget {
                       Icon(
                         Icons.location_on_outlined,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: AppColors.primary,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -292,7 +305,7 @@ class _BookingCardWidget extends ConsumerWidget {
                           hospital?.name ?? 'Unknown Hospital',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.grey[700],
+                            color: AppColors.textSecondaryLight,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -306,14 +319,14 @@ class _BookingCardWidget extends ConsumerWidget {
                       Icon(
                         Icons.calendar_today_outlined,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: AppColors.primary,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         formattedDate,
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey[700],
+                          color: AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
@@ -324,14 +337,14 @@ class _BookingCardWidget extends ConsumerWidget {
                       Icon(
                         Icons.access_time_outlined,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: AppColors.primary,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         booking.time,
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey[700],
+                          color: AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
@@ -344,8 +357,10 @@ class _BookingCardWidget extends ConsumerWidget {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.cardLight,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.borderLight, width: 1),
+              boxShadow: AppTheme.cardShadow,
             ),
             child: const CircularProgressIndicator(),
           ),
@@ -353,10 +368,15 @@ class _BookingCardWidget extends ConsumerWidget {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.cardLight,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.borderLight, width: 1),
+              boxShadow: AppTheme.cardShadow,
             ),
-            child: Text('Error loading doctor info: $error'),
+            child: Text(
+              'Error loading doctor info: $error',
+              style: TextStyle(color: AppColors.error, fontSize: 12),
+            ),
           ),
         );
       },
@@ -364,8 +384,10 @@ class _BookingCardWidget extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          color: AppColors.cardLight,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderLight, width: 1),
+          boxShadow: AppTheme.cardShadow,
         ),
         child: const CircularProgressIndicator(),
       ),
@@ -373,10 +395,15 @@ class _BookingCardWidget extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          color: AppColors.cardLight,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderLight, width: 1),
+          boxShadow: AppTheme.cardShadow,
         ),
-        child: Text('Error loading hospital info: $error'),
+        child: Text(
+          'Error loading hospital info: $error',
+          style: TextStyle(color: AppColors.error, fontSize: 12),
+        ),
       ),
     );
   }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:convert';
+import 'package:medilink/core/theme/app_colors.dart';
+import 'package:medilink/core/theme/app_theme.dart';
 import 'package:medilink/features/home/screens/doctor_list_screen.dart';
 import 'package:medilink/features/home/screens/search_screen.dart';
 import 'package:medilink/features/home/screens/bookings_screen.dart';
@@ -55,7 +58,7 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.surfaceLight,
       appBar: appBar,
       drawer: drawer,
       body: body,
@@ -65,30 +68,30 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 2,
+      backgroundColor: AppColors.cardLight,
+      elevation: 1,
       leading: Builder(
         builder: (context) => IconButton(
-          icon: const Icon(Icons.menu, color: Color(0xFF1A1A2E)),
+          icon: const Icon(Icons.menu, color: AppColors.primary),
           onPressed: () => Scaffold.of(context).openDrawer(),
         ),
       ),
       title: const Text(
-        'Medilink',
+        'MEDILINK',
         style: TextStyle(
-          color: Color(0xFF1A1A2E),
-          fontSize: 22,
+          color: AppColors.primary,
+          fontSize: 20,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
+          letterSpacing: 1,
         ),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Color(0xFF1A1A2E)),
+          icon: const Icon(Icons.notifications_outlined, color: AppColors.primary),
           onPressed: () {},
         ),
         IconButton(
-          icon: const Icon(Icons.account_circle_outlined, color: Color(0xFF1A1A2E)),
+          icon: const Icon(Icons.account_circle_outlined, color: AppColors.primary),
           onPressed: () {},
         ),
       ],
@@ -106,8 +109,8 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
               padding: EdgeInsets.zero,
               children: [
                 DrawerHeader(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF20B2AA),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
                   ),
                   child: userAsync.when(
                     data: (user) {
@@ -119,10 +122,10 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                             width: 56,
                             height: 56,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withOpacity(0.25),
                               borderRadius: BorderRadius.circular(28),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.5),
+                                color: Colors.white.withOpacity(0.4),
                                 width: 2,
                               ),
                             ),
@@ -145,7 +148,7 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                           Text(
                             user?.email ?? '',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withOpacity(0.85),
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
@@ -155,11 +158,11 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                         ],
                       );
                     },
-                    loading: () => const CircularProgressIndicator(),
-                    error: (_, __) => const Text('Error loading user'),
+                    loading: () => const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                    error: (_, __) => const Text('Error loading user', style: TextStyle(color: Colors.white)),
                   ),
                 ),
-                const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                Divider(height: 1, color: AppColors.dividerLight),
                 _buildDrawerMenuItem(
                   icon: Icons.home_outlined,
                   label: 'Home',
@@ -195,7 +198,7 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+          const Divider(height: 1, color: AppColors.dividerLight),
           _buildDrawerMenuItem(
             icon: Icons.logout_rounded,
             label: 'Logout',
@@ -220,8 +223,8 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    final textColor = isDestructive ? const Color(0xFFEF4444) : const Color(0xFF1A1A2E);
-    final iconColor = isDestructive ? const Color(0xFFEF4444) : const Color(0xFF20B2AA);
+    final textColor = isDestructive ? AppColors.error : AppColors.textPrimaryLight;
+    final iconColor = isDestructive ? AppColors.error : AppColors.primary;
 
     return ListTile(
       leading: Icon(icon, color: iconColor, size: 22),
@@ -241,41 +244,30 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
 
   Widget _buildLocationSection() {
     return Container(
-      color: Colors.white,
+      color: AppColors.cardLight,
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          const Icon(Icons.location_on, color: Color(0xFF20B2AA), size: 20),
+          Icon(Icons.location_on, color: AppColors.primary, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Delivery to',
-                  style: TextStyle(
-                    color: Color(0xFF6B7280),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall,
                 ),
-                const Text(
+                Text(
                   'Home • 45 Main Street...',
-                  style: TextStyle(
-                    color: Color(0xFF1A1A2E),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(context).textTheme.titleSmall,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.expand_more, color: Color(0xFF6B7280)),
-            onPressed: () {},
-          ),
+          Icon(Icons.expand_more, color: AppColors.textSecondaryLight),
         ],
       ),
     );
@@ -283,14 +275,12 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
 
   Widget _buildPromoSection() {
     return Container(
-      color: Colors.white,
+      color: AppColors.cardLight,
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(top: 8),
       child: Container(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF20B2AA), Color(0xFF0F9488)],
-          ),
+          gradient: AppTheme.healthcareGradient,
           borderRadius: BorderRadius.circular(12),
         ),
         padding: const EdgeInsets.all(16),
@@ -362,10 +352,10 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
               ),
               TextButton(
                 onPressed: () {},
-                child: const Text(
+                child: Text(
                   'View all',
                   style: TextStyle(
-                    color: Color(0xFF20B2AA),
+                    color: AppColors.primary,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -382,11 +372,11 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                 child: Center(
                   child: Column(
                     children: [
-                      Icon(Icons.local_hospital_outlined, size: 48, color: Colors.grey[300]),
+                      Icon(Icons.local_hospital_outlined, size: 48, color: AppColors.borderLight),
                       const SizedBox(height: 12),
                       Text(
                         'No hospitals found',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                        style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 14),
                       ),
                     ],
                   ),
@@ -406,7 +396,7 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
             padding: const EdgeInsets.symmetric(vertical: 32),
             child: Center(
               child: CircularProgressIndicator(
-                color: const Color(0xFF20B2AA),
+                color: AppColors.primary,
               ),
             ),
           ),
@@ -415,11 +405,11 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
             child: Center(
               child: Column(
                 children: [
-                  Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+                  Icon(Icons.error_outline, size: 48, color: AppColors.error),
                   const SizedBox(height: 12),
                   Text(
                     'Failed to load hospitals',
-                    style: TextStyle(color: Colors.red[500], fontSize: 14),
+                    style: TextStyle(color: AppColors.error, fontSize: 14),
                   ),
                 ],
               ),
@@ -448,42 +438,43 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: AppColors.cardLight,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: AppTheme.cardShadow,
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Hospital Header with Icon
+              // Hospital Header with Photo or Icon
               Container(
                 height: 120,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF20B2AA).withOpacity(0.8),
-                      const Color(0xFF14919B),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: AppTheme.healthcareGradient,
                 ),
-                child: Center(
-                  child: Icon(
-                    Icons.local_hospital,
-                    size: 48,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
+                child: hospital.photoUrl != null
+                    ? Image.memory(
+                        base64Decode(hospital.photoUrl!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Icon(
+                              Icons.local_hospital,
+                              size: 48,
+                              color: Colors.white,
+                            ),
+                          );
+                        },
+                      )
+                    : Center(
+                        child: Icon(
+                          Icons.local_hospital,
+                          size: 48,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
               // Hospital Info
               Padding(
@@ -493,8 +484,8 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                   children: [
                     Text(
                       hospital.name,
-                      style: const TextStyle(
-                        color: Color(0xFF1A1A2E),
+                      style: TextStyle(
+                        color: AppColors.textPrimaryLight,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -505,14 +496,14 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                     // Address
                     Row(
                       children: [
-                        const Icon(Icons.location_on,
-                            size: 14, color: Color(0xFF20B2AA)),
+                        Icon(Icons.location_on,
+                            size: 14, color: AppColors.primary),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             hospital.address,
-                            style: const TextStyle(
-                              color: Color(0xFF6B7280),
+                            style: TextStyle(
+                              color: AppColors.textSecondaryLight,
                               fontSize: 12,
                             ),
                             maxLines: 1,
@@ -525,13 +516,13 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                     // Contact
                     Row(
                       children: [
-                        const Icon(Icons.phone,
-                            size: 14, color: Color(0xFF20B2AA)),
+                        Icon(Icons.phone,
+                            size: 14, color: AppColors.primary),
                         const SizedBox(width: 4),
                         Text(
                           hospital.contact,
-                          style: const TextStyle(
-                            color: Color(0xFF20B2AA),
+                          style: TextStyle(
+                            color: AppColors.primary,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
@@ -544,10 +535,10 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF20B2AA),
+                          backgroundColor: AppColors.primary,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         onPressed: () {
@@ -588,6 +579,10 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
       currentIndex: _selectedBottomNav,
       onTap: (index) => setState(() => _selectedBottomNav = index),
       type: BottomNavigationBarType.fixed,
+      backgroundColor: AppColors.cardLight,
+      selectedItemColor: AppColors.primary,
+      unselectedItemColor: AppColors.textSecondaryLight,
+      elevation: 8,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),

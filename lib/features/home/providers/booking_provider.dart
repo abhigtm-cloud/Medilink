@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medilink/features/home/models/booking.dart';
 import 'package:medilink/features/home/repositories/booking_repository.dart';
-import 'package:medilink/features/auth/providers/auth_providers.dart';
 
 /// Provides a singleton instance of [BookingRepository].
 final bookingRepositoryProvider = Provider<BookingRepository>((ref) {

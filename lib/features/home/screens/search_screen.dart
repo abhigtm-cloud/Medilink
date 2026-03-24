@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:convert';
+import 'package:medilink/core/theme/app_colors.dart';
+import 'package:medilink/core/theme/app_theme.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
 import 'package:medilink/features/home/models/hospital.dart';
 import 'package:medilink/features/home/screens/doctor_list_screen.dart';
@@ -36,14 +39,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.surfaceLight,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardLight,
         elevation: 1,
-        title: const Text(
+        title: Text(
           'Search Hospitals',
           style: TextStyle(
-            color: Color(0xFF1A1A2E),
+            color: AppColors.primary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
@@ -58,28 +61,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                color: AppColors.cardLight,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderLight, width: 1),
+                boxShadow: AppTheme.cardShadow,
               ),
               child: TextField(
                 controller: _searchController,
                 onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Search hospital or location',
                   hintStyle: TextStyle(
-                    color: Color(0xFF9CA3AF),
+                    color: AppColors.textSecondaryLight,
                   ),
                   border: InputBorder.none,
                   prefixIcon: Icon(
                     Icons.search,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.primary,
                   ),
                 ),
               ),
@@ -110,13 +108,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 Icon(
                   Icons.search_off,
                   size: 48,
-                  color: Colors.grey[300],
+                  color: AppColors.borderLight,
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'No hospitals found',
                   style: TextStyle(
-                    color: Colors.grey[500],
+                    color: AppColors.textSecondaryLight,
                     fontSize: 14,
                   ),
                 ),
@@ -148,15 +146,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: AppColors.cardLight,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.borderLight, width: 1),
+                  boxShadow: AppTheme.cardShadow,
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,19 +158,29 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFF20B2AA).withOpacity(0.2),
-                            const Color(0xFF14919B).withOpacity(0.1),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.primaryLight.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
-                        Icons.local_hospital,
-                        color: Color(0xFF20B2AA),
-                        size: 32,
-                      ),
+                      child: hospital.photoUrl != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.memory(
+                                base64Decode(hospital.photoUrl!),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(
+                                    Icons.local_hospital,
+                                    color: AppColors.primary,
+                                    size: 32,
+                                  );
+                                },
+                              ),
+                            )
+                          : Icon(
+                              Icons.local_hospital,
+                              color: AppColors.primary,
+                              size: 32,
+                            ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -186,10 +189,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         children: [
                           Text(
                             hospital.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A1A2E),
+                              color: AppColors.textPrimaryLight,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -197,9 +200,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           const SizedBox(height: 4),
                           Text(
                             hospital.address,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: Color(0xFF6B7280),
+                              color: AppColors.textSecondaryLight,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -207,18 +210,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.phone_outlined,
                                 size: 14,
-                                color: Color(0xFF6B7280),
+                                color: AppColors.primary,
                               ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   hospital.contact,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: Color(0xFF6B7280),
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -238,7 +242,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       },
       loading: () => Center(
         child: CircularProgressIndicator(
-          color: const Color(0xFF20B2AA),
+          color: AppColors.primary,
         ),
       ),
       error: (error, _) => Center(
@@ -248,14 +252,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             Icon(
               Icons.error_outline,
               size: 48,
-              color: Colors.red[300],
+              color: AppColors.error,
             ),
             const SizedBox(height: 12),
             Text(
               'Failed to load hospitals',
               style: TextStyle(
-                color: Colors.red[500],
+                color: AppColors.error,
                 fontSize: 14,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],

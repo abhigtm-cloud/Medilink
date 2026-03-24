@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:medilink/core/theme/app_colors.dart';
 import 'package:medilink/features/home/providers/slot_provider.dart';
 import 'package:medilink/features/home/providers/booking_provider.dart';
 import 'package:medilink/features/home/models/booking.dart';
@@ -47,15 +48,31 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
     );
 
     return Scaffold(
+      backgroundColor: AppColors.surfaceLight,
       appBar: AppBar(
+        backgroundColor: AppColors.cardLight,
+        elevation: 1,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.primary),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.doctorName),
+            Text(
+              widget.doctorName,
+              style: TextStyle(
+                color: AppColors.primary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             Text(
               widget.specialization,
-              style: Theme.of(context).textTheme.labelSmall,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
             ),
           ],
         ),
@@ -65,13 +82,16 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
           // Date Picker
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.white,
+            color: AppColors.cardLight,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Select Date',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimaryLight,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
@@ -97,30 +117,36 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
                           decoration: BoxDecoration(
                             border: Border.all(
                               color: isSelected
-                                  ? const Color(0xFF20B2AA)
-                                  : Colors.grey[300]!,
+                                  ? AppColors.primary
+                                  : AppColors.borderLight,
                               width: 2,
                             ),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
                             color: isSelected
-                                ? const Color(0xFF20B2AA).withOpacity(0.1)
-                                : Colors.white,
+                                ? AppColors.primary.withOpacity(0.1)
+                                : AppColors.surfaceLight,
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
                                 date.day.toString(),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : AppColors.textPrimaryLight,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
                                     [date.weekday - 1],
-                                style: const TextStyle(fontSize: 12),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondaryLight,
+                                ),
                               ),
                             ],
                           ),
@@ -132,15 +158,28 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
               ],
             ),
           ),
-          const Divider(),
+          Divider(color: AppColors.borderLight),
 
           // Slots
           Expanded(
             child: slotsAsync.when(
               data: (slots) {
                 if (slots.isEmpty) {
-                  return const Center(
-                    child: Text('No slots available for this date'),
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.schedule_outlined, size: 48, color: AppColors.borderLight),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No slots available for this date',
+                          style: TextStyle(
+                            color: AppColors.textSecondaryLight,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 }
 
@@ -170,18 +209,18 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
                         decoration: BoxDecoration(
                           border: Border.all(
                             color: isSelected
-                                ? const Color(0xFF20B2AA)
+                                ? AppColors.primary
                                 : (isBooked
-                                    ? Colors.red[300]!
-                                    : Colors.grey[300]!),
+                                    ? AppColors.error
+                                    : AppColors.borderLight),
                             width: 2,
                           ),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                           color: isBooked
-                              ? Colors.red[100]
+                              ? AppColors.error.withOpacity(0.1)
                               : (isSelected
-                                  ? const Color(0xFF20B2AA).withOpacity(0.1)
-                                  : Colors.white),
+                                  ? AppColors.primary.withOpacity(0.1)
+                                  : AppColors.surfaceLight),
                         ),
                         child: Center(
                           child: Column(
@@ -191,7 +230,9 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
                                 slot.time,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: isBooked ? Colors.red : Colors.black,
+                                  color: isBooked
+                                      ? AppColors.error
+                                      : AppColors.textPrimaryLight,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -200,7 +241,9 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
                                 isBooked ? 'Booked' : 'Available',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: isBooked ? Colors.red : Colors.green,
+                                  color: isBooked
+                                      ? AppColors.error
+                                      : AppColors.success,
                                 ),
                               ),
                             ],
@@ -215,7 +258,30 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
                 child: CircularProgressIndicator(),
               ),
               error: (error, st) => Center(
-                child: Text('Error: $error'),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Error loading slots',
+                      style: TextStyle(
+                        color: AppColors.textPrimaryLight,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Error: $error',
+                      style: TextStyle(
+                        color: AppColors.textSecondaryLight,
+                        fontSize: 12,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -226,9 +292,21 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
         child: ElevatedButton(
           onPressed: _selectedSlotId == null ? null : _bookSlot,
           style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            disabledBackgroundColor: AppColors.borderLight,
             padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
-          child: const Text('Book Appointment'),
+          child: const Text(
+            'Book Appointment',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ),
     );

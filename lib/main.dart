@@ -27,8 +27,6 @@ class MedilinkApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authStream = ref.watch(authStateChangesProvider);
 
-    print('DEBUG: MedilinkApp - authStream state: $authStream');
-
     return MaterialApp(
       title: 'MEDILINK',
       debugShowCheckedModeBanner: false,
@@ -37,49 +35,31 @@ class MedilinkApp extends ConsumerWidget {
       themeMode: ThemeMode.system,
       home: authStream.when(
         data: (user) {
-          print('DEBUG: MedilinkApp - authStream data: user = ${user?.email}');
           if (user == null) {
-            print('DEBUG: MedilinkApp - Showing LoginScreen');
             return const LoginScreen();
           }
-          print('DEBUG: MedilinkApp - Showing HomeScreen for user: ${user.email}');
           return const HomeScreen();
         },
-        loading: () {
-          print('DEBUG: MedilinkApp - authStream is loading');
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
+        loading: () => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+        error: (e, st) => Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Error'),
+                const SizedBox(height: 16),
+                Text('$e'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => ref.refresh(authStateChangesProvider),
+                  child: const Text('Retry'),
+                ),
+              ],
             ),
-          );
-        },
-        error: (e, st) {
-          print('DEBUG: MedilinkApp - authStream error: $e');
-          print('DEBUG: MedilinkApp - Stack trace: $st');
-          return Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Authentication Error'),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error: $e',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Try to recover by resetting
-                      ref.refresh(authStateChangesProvider);
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }

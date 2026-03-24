@@ -11,7 +11,10 @@ class AuthRepository {
 
   /// Stream of [AppUser] used to drive auth state in the app.
   Stream<AppUser?> authStateChanges() {
-    return _firebaseAuth.authStateChanges().map(
+    print('DEBUG: AuthRepository.authStateChanges() - Creating stream listener');
+    return _firebaseAuth.authStateChanges().doOnData((user) {
+      print('DEBUG: AuthRepository.authStateChanges STREAM EVENT - User: ${user?.email}');
+    }).map(
           (user) {
             print('DEBUG: AuthRepository - Firebase authStateChanges emitted user: ${user?.email}');
             if (user == null) {
@@ -39,16 +42,26 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final credential = await _firebaseAuth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-    final user = credential.user!;
-    return AppUser.create(
-      uid: user.uid,
-      email: user.email ?? email,
-      displayName: user.displayName,
-    );
+    try {
+      print('DEBUG: AuthRepository.signInWithEmailAndPassword - Attempting login for: $email');
+      final credential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final user = credential.user!;
+      print('DEBUG: AuthRepository.signInWithEmailAndPassword - Login successful for: ${user.email}');
+      return AppUser.create(
+        uid: user.uid,
+        email: user.email ?? email,
+        displayName: user.displayName,
+      );
+    } on FirebaseAuthException catch (e) {
+      print('DEBUG: AuthRepository.signInWithEmailAndPassword - FirebaseAuthException: ${e.code} - ${e.message}');
+      rethrow;
+    } catch (e) {
+      print('DEBUG: AuthRepository.signInWithEmailAndPassword - Generic error: $e');
+      rethrow;
+    }
   }
 
   Future<AppUser> registerWithEmailAndPassword({

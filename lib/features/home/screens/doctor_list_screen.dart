@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:medilink/core/theme/app_colors.dart';
+import 'package:medilink/core/theme/app_theme.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
 import 'package:medilink/features/home/screens/doctor_booking_screen.dart';
+import 'dart:convert';
 
 /// Doctor List Screen displaying available doctors from Firebase
 class DoctorListScreen extends ConsumerWidget {
@@ -19,21 +22,21 @@ class DoctorListScreen extends ConsumerWidget {
     final doctorsAsync = ref.watch(getDoctorsByHospitalProvider(hospitalId));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.surfaceLight,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 2,
+        backgroundColor: AppColors.cardLight,
+        elevation: 1,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1A2E)),
+          icon: Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Available Doctors',
               style: TextStyle(
-                color: Color(0xFF1A1A2E),
+                color: AppColors.primary,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
@@ -41,8 +44,8 @@ class DoctorListScreen extends ConsumerWidget {
             const SizedBox(height: 4),
             Text(
               hospitalName,
-              style: const TextStyle(
-                color: Color(0xFF6B7280),
+              style: TextStyle(
+                color: AppColors.textSecondaryLight,
                 fontSize: 12,
               ),
             ),
@@ -52,8 +55,21 @@ class DoctorListScreen extends ConsumerWidget {
       body: doctorsAsync.when(
         data: (doctors) {
           if (doctors.isEmpty) {
-            return const Center(
-              child: Text('No doctors available'),
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.person_outline, size: 48, color: AppColors.borderLight),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No doctors available',
+                    style: TextStyle(
+                      color: AppColors.textSecondaryLight,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             );
           }
 
@@ -79,35 +95,56 @@ class DoctorListScreen extends ConsumerWidget {
                 child: Container(
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    color: AppColors.cardLight,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.borderLight, width: 1),
+                    boxShadow: AppTheme.cardShadow,
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Doctor Avatar
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(8),
+                        // Doctor Avatar with Photo
+                        if (doctor.photoUrl != null)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.memory(
+                              base64Decode(doctor.photoUrl!),
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryLight.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 40,
+                                    color: AppColors.primary,
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                        else
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryLight.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.person,
+                              size: 40,
+                              color: AppColors.primary,
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.person,
-                            size: 40,
-                            color: Colors.grey,
-                          ),
-                        ),
                         const SizedBox(width: 12),
                         // Doctor Info
                         Expanded(
@@ -116,8 +153,8 @@ class DoctorListScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 doctor.name,
-                                style: const TextStyle(
-                                  color: Color(0xFF1A1A2E),
+                                style: TextStyle(
+                                  color: AppColors.textPrimaryLight,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -125,8 +162,8 @@ class DoctorListScreen extends ConsumerWidget {
                               const SizedBox(height: 4),
                               Text(
                                 doctor.specialization,
-                                style: const TextStyle(
-                                  color: Color(0xFF20B2AA),
+                                style: TextStyle(
+                                  color: AppColors.primary,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -134,16 +171,16 @@ class DoctorListScreen extends ConsumerWidget {
                               const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.schedule,
                                     size: 14,
-                                    color: Color(0xFF6B7280),
+                                    color: AppColors.textSecondaryLight,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${doctor.startTime} - ${doctor.endTime}',
-                                    style: const TextStyle(
-                                      color: Color(0xFF6B7280),
+                                    style: TextStyle(
+                                      color: AppColors.textSecondaryLight,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -152,16 +189,16 @@ class DoctorListScreen extends ConsumerWidget {
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.timer,
                                     size: 14,
-                                    color: Color(0xFF6B7280),
+                                    color: AppColors.textSecondaryLight,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Slot: ${doctor.slotDurationMinutes} min',
-                                    style: const TextStyle(
-                                      color: Color(0xFF6B7280),
+                                    style: TextStyle(
+                                      color: AppColors.textSecondaryLight,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -171,7 +208,7 @@ class DoctorListScreen extends ConsumerWidget {
                           ),
                         ),
                         // Arrow
-                        const Icon(Icons.arrow_forward, color: Color(0xFF20B2AA)),
+                        Icon(Icons.arrow_forward, color: AppColors.primary),
                       ],
                     ),
                   ),
@@ -184,7 +221,33 @@ class DoctorListScreen extends ConsumerWidget {
           child: CircularProgressIndicator(),
         ),
         error: (error, st) => Center(
-          child: Text('Error: $error'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              const SizedBox(height: 12),
+              Text(
+                'Error loading doctors',
+                style: TextStyle(
+                  color: AppColors.textPrimaryLight,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Error: $error',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryLight,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

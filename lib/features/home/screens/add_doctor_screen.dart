@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:convert';
 import 'package:medilink/features/home/models/doctor.dart';
 import 'package:medilink/features/home/models/slot.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
@@ -73,6 +76,7 @@ class _AddDoctorScreenState extends ConsumerState<AddDoctorScreen> {
           startTime: doctorForm.startTime,
           endTime: doctorForm.endTime,
           slotDurationMinutes: doctorForm.slotDuration,
+          photoUrl: doctorForm.photoBase64,
         );
 
         await ref.read(doctorControllerProvider.notifier).createDoctor(doctor);
@@ -304,6 +308,8 @@ class DoctorFormData {
   String startTime = '09:00';
   String endTime = '17:00';
   int slotDuration = 30;
+  String? photoBase64; // Base64 encoded doctor photo
+  File? photoFile; // Temporary file reference
 
   bool validate() {
     return nameController.text.isNotEmpty &&
@@ -398,7 +404,7 @@ class _DoctorFormWidgetState extends State<_DoctorFormWidget> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<int>(
-              value: widget.doctorForm.slotDuration,
+              initialValue: widget.doctorForm.slotDuration,
               decoration: const InputDecoration(
                 labelText: 'Slot Duration (minutes)',
                 border: OutlineInputBorder(),
@@ -417,10 +423,128 @@ class _DoctorFormWidgetState extends State<_DoctorFormWidget> {
                 }
               },
             ),
+            const SizedBox(height: 16),
+            // Doctor Photo Section
+            const Text(
+              'Doctor Photo (Optional)',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (widget.doctorForm.photoFile != null)
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(
+                      widget.doctorForm.photoFile!,
+                      height: 150,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          widget.doctorForm.photoFile = null;
+                          widget.doctorForm.photoBase64 = null;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else
+              GestureDetector(
+                onTap: () => _pickDoctorPhoto(context),
+                child: Container(
+                  height: 120,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.grey.shade300,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey.shade50,
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.person_add,
+                          size: 40,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tap to upload doctor photo',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _pickDoctorPhoto(BuildContext context) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        final File imageFile = File(image.path);
+        final bytes = await imageFile.readAsBytes();
+        final base64Image = base64Encode(bytes);
+
+        setState(() {
+          widget.doctorForm.photoFile = imageFile;
+          widget.doctorForm.photoBase64 = base64Image;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('✅ Photo selected')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking image: $e')),
+        );
+      }
+    }
   }
 }
 

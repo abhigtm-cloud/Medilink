@@ -82,8 +82,8 @@ class HospitalController extends StateNotifier<AsyncValue<Hospital?>> {
       await _repo.deleteHospital(hospitalId);
       
       // Invalidate cache
-      await _read.refresh(getAdminHospitalsProvider);
-      await _read.refresh(getAllHospitalsProvider);
+      _read.refresh(getAdminHospitalsProvider);
+      _read.refresh(getAllHospitalsProvider);
       
       state = AsyncValue.data(null);
     } catch (e, st) {
