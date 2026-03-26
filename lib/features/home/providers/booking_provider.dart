@@ -54,7 +54,7 @@ class BookingController extends StateNotifier<AsyncValue<Booking?>> {
 
       // Get doctor info
       final doctorRepo = _read.read(doctorRepositoryProvider);
-      final doctor = await doctorRepo.getDoctorById(booking.doctorId);
+      final doctor = await doctorRepo.getDoctorById(booking.hospitalId, booking.doctorId);
 
       // Get hospital info
       final hospitalRepo = _read.read(hospitalRepositoryProvider);
