@@ -56,6 +56,9 @@ dependencies:
   # Email service
   emailjs: ^0.0.9
 
+  # Maps integration
+  google_maps_flutter: ^2.5.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

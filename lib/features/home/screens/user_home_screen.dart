@@ -5,13 +5,16 @@ import 'package:geolocator/geolocator.dart';
 import 'package:medilink/core/theme/app_colors.dart';
 import 'package:medilink/core/theme/app_theme.dart';
 import 'package:medilink/core/services/location_service.dart';
+import 'package:medilink/core/services/emergency_service.dart';
 import 'package:medilink/features/home/screens/doctor_list_screen.dart';
 import 'package:medilink/features/home/screens/search_screen.dart';
 import 'package:medilink/features/home/screens/bookings_screen.dart';
 import 'package:medilink/features/home/screens/account_screen.dart';
+import 'package:medilink/features/home/screens/hospital_map_screen.dart';
 import 'package:medilink/features/auth/screens/login_screen.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
+import 'package:medilink/features/home/providers/slot_provider.dart';
 import 'package:medilink/features/home/models/hospital.dart';
 
 /// User home screen for browsing hospitals and booking appointments
@@ -71,6 +74,9 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
         body = const BookingsScreen();
         break;
       case 3:
+        body = const HospitalMapScreen();
+        break;
+      case 4:
         body = const AccountScreen();
         break;
       default:
@@ -82,8 +88,98 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
       appBar: appBar,
       drawer: drawer,
       body: body,
+      floatingActionButton: _selectedBottomNav == 0 ? _buildEmergencyButton() : null,
       bottomNavigationBar: _buildBottomNavigation(),
     );
+  }
+
+  Widget _buildEmergencyButton() {
+    return FloatingActionButton.extended(
+      onPressed: _handleEmergency,
+      backgroundColor: Colors.red,
+      foregroundColor: Colors.white,
+      icon: const Icon(Icons.emergency),
+      label: const Text('EMERGENCY'),
+    );
+  }
+
+  Future<void> _handleEmergency() async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Finding Nearest Hospital...'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            const Text('Locating your position...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // Get all hospitals
+      final hospitalsAsync = ref.read(getAllHospitalsProvider);
+      final hospitals = hospitalsAsync.value ?? [];
+
+      if (hospitals.isEmpty) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No hospitals available')),
+        );
+        return;
+      }
+
+      // Get user's current location
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Find nearest hospital with coordinates
+      var nearestHospital = hospitals.first;
+      var minDistance = double.infinity;
+
+      for (final hospital in hospitals) {
+        if (hospital.latitude != null && hospital.longitude != null) {
+          final distance = EmergencyService.calculateDistance(
+            lat1: position.latitude,
+            lon1: position.longitude,
+            lat2: hospital.latitude!,
+            lon2: hospital.longitude!,
+          );
+
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestHospital = hospital;
+          }
+        }
+      }
+
+      Navigator.pop(context); // Close loading dialog
+
+      // Navigate to that hospital's doctor list
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DoctorListScreen(
+            hospitalName: nearestHospital.name,
+            hospitalId: nearestHospital.id ?? '',
+          ),
+        ),
+      );
+    } catch (e) {
+      Navigator.pop(context); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -208,10 +304,18 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                   },
                 ),
                 _buildDrawerMenuItem(
+                  icon: Icons.map_outlined,
+                  label: 'Hospitals Map',
+                  onTap: () {
+                    setState(() => _selectedBottomNav = 3);
+                    Navigator.pop(context);
+                  },
+                ),
+                _buildDrawerMenuItem(
                   icon: Icons.person_outline,
                   label: 'Account',
                   onTap: () {
-                    setState(() => _selectedBottomNav = 3);
+                    setState(() => _selectedBottomNav = 4);
                     Navigator.pop(context);
                   },
                 ),
@@ -655,6 +759,7 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Bookings'),
+        BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Maps'),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Account'),
       ],
     );
