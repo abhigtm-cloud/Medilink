@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
+import 'package:geolocator/geolocator.dart';
 import 'package:medilink/core/theme/app_colors.dart';
 import 'package:medilink/core/theme/app_theme.dart';
+import 'package:medilink/core/services/location_service.dart';
 import 'package:medilink/features/home/screens/doctor_list_screen.dart';
 import 'package:medilink/features/home/screens/search_screen.dart';
 import 'package:medilink/features/home/screens/bookings_screen.dart';
@@ -22,6 +24,24 @@ class UserHomeScreen extends ConsumerStatefulWidget {
 
 class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
   int _selectedBottomNav = 0;
+  Position? _currentPosition;
+  bool _loadingLocation = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentLocation();
+  }
+
+  Future<void> _loadCurrentLocation() async {
+    final position = await LocationService.getCurrentLocation();
+    if (mounted) {
+      setState(() {
+        _currentPosition = position;
+        _loadingLocation = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -255,19 +275,39 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Delivery to',
+                  'Current Location',
                   style: Theme.of(context).textTheme.labelSmall,
                 ),
-                Text(
-                  'Home • 45 Main Street...',
-                  style: Theme.of(context).textTheme.titleSmall,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                if (_loadingLocation)
+                  Text(
+                    'Loading location...',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  )
+                else if (_currentPosition != null)
+                  Text(
+                    '${_currentPosition!.latitude.toStringAsFixed(4)}, ${_currentPosition!.longitude.toStringAsFixed(4)}',
+                    style: Theme.of(context).textTheme.titleSmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  )
+                else
+                  Text(
+                    'Location not available',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: AppColors.error,
+                        ),
+                  ),
               ],
             ),
           ),
-          Icon(Icons.expand_more, color: AppColors.textSecondaryLight),
+          IconButton(
+            icon: Icon(
+              Icons.refresh,
+              color: AppColors.primary,
+              size: 20,
+            ),
+            onPressed: _loadingLocation ? null : _loadCurrentLocation,
+          ),
         ],
       ),
     );
@@ -531,38 +571,66 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                     ),
                     const SizedBox(height: 8),
                     // View Doctors Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () {
-                          if (hospital.id != null) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => DoctorListScreen(
-                                  hospitalName: hospital.name,
-                                  hospitalId: hospital.id!,
-                                ),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            );
-                          }
-                        },
-                        child: const Text(
-                          'View Doctors',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                            ),
+                            onPressed: () {
+                              if (hospital.id != null) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => DoctorListScreen(
+                                      hospitalName: hospital.name,
+                                      hospitalId: hospital.id!,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Text(
+                              'View Doctors',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: hospital.latitude != null && hospital.longitude != null
+                                ? () => LocationService.openGoogleMaps(
+                                      latitude: hospital.latitude!,
+                                      longitude: hospital.longitude!,
+                                      locationName: hospital.name,
+                                    )
+                                : null,
+                            child: const Icon(
+                              Icons.directions,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

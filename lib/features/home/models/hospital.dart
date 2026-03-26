@@ -7,6 +7,8 @@ class Hospital {
   final String? adminId; // UID of the hospital admin who created it
   final DateTime? createdAt;
   final String? photoUrl; // Photo URL or base64 encoded image
+  final double? latitude;
+  final double? longitude;
 
   const Hospital({
     this.id,
@@ -16,6 +18,8 @@ class Hospital {
     this.adminId,
     this.createdAt,
     this.photoUrl,
+    this.latitude,
+    this.longitude,
   });
 
   Hospital copyWith({
@@ -26,6 +30,8 @@ class Hospital {
     String? adminId,
     DateTime? createdAt,
     String? photoUrl,
+    double? latitude,
+    double? longitude,
   }) {
     return Hospital(
       id: id ?? this.id,
@@ -35,6 +41,8 @@ class Hospital {
       adminId: adminId ?? this.adminId,
       createdAt: createdAt ?? this.createdAt,
       photoUrl: photoUrl ?? this.photoUrl,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 
@@ -49,6 +57,8 @@ class Hospital {
           ? DateTime.parse(json['createdAt'] as String)
           : null,
       photoUrl: json['photoUrl'] as String?,
+      latitude: json['latitude'] as double?,
+      longitude: json['longitude'] as double?,
     );
   }
 
@@ -60,6 +70,8 @@ class Hospital {
       'adminId': adminId,
       'createdAt': createdAt?.toIso8601String(),
       'photoUrl': photoUrl,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 }

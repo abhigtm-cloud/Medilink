@@ -49,6 +49,13 @@ dependencies:
   # Image handling
   image_picker: ^1.1.1
 
+  # Location services
+  geolocator: ^11.0.0
+  url_launcher: ^6.2.4
+
+  # Email service
+  emailjs: ^0.0.9
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

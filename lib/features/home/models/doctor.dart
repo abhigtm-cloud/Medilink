@@ -8,6 +8,7 @@ class Doctor {
   final String endTime; // Format: "HH:mm" (24-hour)
   final int slotDurationMinutes;
   final String? photoUrl; // Base64 encoded doctor photo (optional)
+  final String? email; // Doctor's email for notifications
   final DateTime? createdAt;
 
   const Doctor({
@@ -19,6 +20,7 @@ class Doctor {
     required this.endTime,
     required this.slotDurationMinutes,
     this.photoUrl,
+    this.email,
     this.createdAt,
   });
 
@@ -31,6 +33,7 @@ class Doctor {
     String? endTime,
     int? slotDurationMinutes,
     String? photoUrl,
+    String? email,
     DateTime? createdAt,
   }) {
     return Doctor(
@@ -42,6 +45,7 @@ class Doctor {
       endTime: endTime ?? this.endTime,
       slotDurationMinutes: slotDurationMinutes ?? this.slotDurationMinutes,
       photoUrl: photoUrl ?? this.photoUrl,
+      email: email ?? this.email,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -56,6 +60,7 @@ class Doctor {
       endTime: json['endTime'] as String,
       slotDurationMinutes: json['slotDurationMinutes'] as int,
       photoUrl: json['photoUrl'] as String?,
+      email: json['email'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,
@@ -71,6 +76,7 @@ class Doctor {
       'endTime': endTime,
       'slotDurationMinutes': slotDurationMinutes,
       'photoUrl': photoUrl,
+      'email': email,
       'createdAt': createdAt?.toIso8601String(),
     };
   }

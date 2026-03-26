@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medilink/core/theme/app_theme.dart';
+import 'package:medilink/core/services/email_service.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
 import 'package:medilink/features/auth/screens/login_screen.dart';
 import 'package:medilink/features/home/screens/home_screen_wrapper.dart';
@@ -15,6 +16,9 @@ Future<void> main() async {
       ? DefaultFirebaseOptions.web
       : DefaultFirebaseOptions.currentPlatform;
   await Firebase.initializeApp(options: options);
+
+  // Initialize EmailJS for sending booking confirmations
+  await EmailService.initialize();
 
   runApp(const ProviderScope(child: MedilinkApp()));
 }
