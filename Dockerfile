@@ -1,21 +1,4 @@
-# Build stage - Flutter APK compilation
-FROM cirrusci/flutter:3.9.2 AS builder
-
-WORKDIR /app
-
-# Copy pubspec files
-COPY pubspec.yaml pubspec.lock ./
-
-# Get Flutter dependencies
-RUN flutter pub get
-
-# Copy entire project
-COPY . .
-
-# Build release APK
-RUN flutter build apk --release
-
-# Server stage - Serve the APK
+# Simple server to host the pre-built APK
 FROM node:18-alpine
 
 WORKDIR /app
@@ -23,8 +6,8 @@ WORKDIR /app
 # Install a simple HTTP server
 RUN npm install -g http-server
 
-# Copy APK from builder stage
-COPY --from=builder /app/build/app/outputs/flutter-app-release.apk ./public/medilink-release.apk
+# Copy pre-built APK (must be committed to GitHub in public/ folder)
+COPY ./public ./public
 
 # Create a simple HTML interface for download
 RUN mkdir -p public && cat > public/index.html << 'EOF'
