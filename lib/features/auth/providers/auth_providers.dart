@@ -113,6 +113,11 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
     try {
       await _repo.signOut();
       state = const AsyncValue.data(null);
+      
+      // Force refresh the auth state stream to ensure logout completes
+      print('DEBUG: AuthController.signOut - Triggering authStateChangesProvider refresh');
+      _read.refresh(authStateChangesProvider);
+      
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
