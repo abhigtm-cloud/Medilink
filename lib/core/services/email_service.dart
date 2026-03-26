@@ -3,9 +3,9 @@ import 'package:emailjs/emailjs.dart';
 class EmailService {
   // Credentials - Replace with your EmailJS credentials
   // Get these from https://www.emailjs.com/
-  static const String serviceId = 'YOUR_SERVICE_ID'; // Default Email Service
-  static const String templateId = 'YOUR_TEMPLATE_ID'; // Booking Confirmation Template
-  static const String publicKey = 'YOUR_PUBLIC_KEY';
+  static const String serviceId = 'service_phh4doo';
+  static const String templateId = 'template_gcodsnf';
+  static const String publicKey = '-2_gOApslQd5GMamV';
 
   /// Initialize EmailJS (call this once in main())
   static Future<void> initialize() async {
