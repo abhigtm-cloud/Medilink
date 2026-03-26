@@ -54,7 +54,7 @@ dependencies:
   url_launcher: ^6.2.4
 
   # Email service
-  emailjs: ^0.0.9
+  emailjs: ^4.0.0
 
   # Maps integration
   google_maps_flutter: ^2.5.0

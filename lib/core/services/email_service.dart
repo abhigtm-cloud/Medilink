@@ -1,4 +1,4 @@
-import 'package:emailjs/emailjs.dart';
+import 'package:emailjs/emailjs.dart' as emailjs;
 
 class EmailService {
   // Credentials - Replace with your EmailJS credentials
@@ -10,7 +10,7 @@ class EmailService {
   /// Initialize EmailJS (call this once in main())
   static Future<void> initialize() async {
     try {
-      await EmailJS.init(
+      await emailjs.init(
         publicKey: publicKey,
       );
       print('DEBUG: EmailJS initialized successfully');
@@ -32,7 +32,7 @@ class EmailService {
   }) async {
     try {
       // Email to Customer
-      await EmailJS.send(
+      await emailjs.send(
         serviceId,
         templateId,
         {
@@ -49,7 +49,7 @@ class EmailService {
       print('DEBUG: Booking confirmation sent to customer: $customerEmail');
 
       // Email to Doctor
-      await EmailJS.send(
+      await emailjs.send(
         serviceId,
         templateId,
         {
@@ -80,7 +80,7 @@ class EmailService {
     required String appointmentTime,
   }) async {
     try {
-      await EmailJS.send(
+      await emailjs.send(
         serviceId,
         'reminder_template', // Different template for reminders
         {
@@ -105,7 +105,7 @@ class EmailService {
     required String reason,
   }) async {
     try {
-      await EmailJS.send(
+      await emailjs.send(
         serviceId,
         'cancellation_template', // Different template for cancellations
         {

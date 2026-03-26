@@ -14,7 +14,6 @@ import 'package:medilink/features/home/screens/hospital_map_screen.dart';
 import 'package:medilink/features/auth/screens/login_screen.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
-import 'package:medilink/features/home/providers/slot_provider.dart';
 import 'package:medilink/features/home/models/hospital.dart';
 
 /// User home screen for browsing hospitals and booking appointments

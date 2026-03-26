@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:geolocator/geolocator.dart';
 import 'package:medilink/features/home/models/hospital.dart';
 import 'package:medilink/features/home/models/slot.dart';
@@ -12,9 +13,9 @@ class EmergencyService {
   }) {
     const p = 0.017453292519943295; // Math.PI / 180
     final a = 0.5 -
-        ((lat2 - lat1) * p).cos() / 2 +
-        ((lon1 - lon2) * p).cos() * ((lat1 * p).cos()) * ((lat2 * p).cos()) / 2;
-    return 12742 * Asin(a.isNaN ? 0 : a.toDouble()); // 2 * R; R = 6371 km
+        cos((lat2 - lat1) * p) / 2 +
+        cos((lon1 - lon2) * p) * cos(lat1 * p) * cos(lat2 * p) / 2;
+    return 12742 * asin(a.isNaN ? 0 : a); // 2 * R; R = 6371 km
   }
 
   /// Find nearest hospital with available doctor
@@ -93,8 +94,4 @@ class EmergencyService {
       return null;
     }
   }
-}
-
-extension on double {
-  double toDouble() => this;
 }

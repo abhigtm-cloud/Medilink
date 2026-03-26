@@ -24,7 +24,6 @@ class AddDoctorScreen extends ConsumerStatefulWidget {
 }
 
 class _AddDoctorScreenState extends ConsumerState<AddDoctorScreen> {
-  final _formKey = GlobalKey<FormState>();
   final List<DoctorFormData> _doctors = [];
 
   @override

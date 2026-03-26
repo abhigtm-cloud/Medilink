@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medilink/features/home/models/booking.dart';
 import 'package:medilink/features/home/repositories/booking_repository.dart';
-import 'package:medilink/features/home/repositories/doctor_repository.dart';
-import 'package:medilink/features/home/repositories/hospital_repository.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
+import 'package:medilink/features/home/providers/doctor_provider.dart' as doctor_provider;
+import 'package:medilink/features/home/providers/hospital_provider.dart' as hospital_provider;
 import 'package:medilink/core/services/email_service.dart';
 
 /// Provides a singleton instance of [BookingRepository].
@@ -45,19 +45,19 @@ class BookingController extends StateNotifier<AsyncValue<Booking?>> {
     try {
       // Get current user info
       final authState = _read.read(authStateChangesProvider);
-      final user = authState.when(
+      final user = authState.maybeWhen(
         data: (u) => u,
         orElse: () => null,
       );
 
       if (user == null) return;
 
-      // Get doctor info
-      final doctorRepo = _read.read(doctorRepositoryProvider);
+      // Use repositories provided by Riverpod
+      final doctorRepo = _read.read(doctor_provider.doctorRepositoryProvider);
       final doctor = await doctorRepo.getDoctorById(booking.hospitalId, booking.doctorId);
 
       // Get hospital info
-      final hospitalRepo = _read.read(hospitalRepositoryProvider);
+      final hospitalRepo = _read.read(hospital_provider.hospitalRepositoryProvider);
       final hospital = await hospitalRepo.getHospitalById(booking.hospitalId);
 
       // Don't send if missing critical data
