@@ -1,0 +1,23 @@
+services:
+- type: web
+  name: medilink-apk
+  runtime: docker
+  dockerfilePath: ./Dockerfile
+  region: oregon # Change to your preferred region
+  plan: free # or starter/standard for paid plans
+  autoDeploy: true
+  envVars:
+    - key: PORT
+      value: 3000
+  
+  # Optional: Build on specific branch
+  branch: main
+  
+  # Build settings
+  buildCommand: "echo 'Built with Docker'"
+  
+  # Health check
+  healthCheckPath: /
+  
+  # Redirect to HTTPS
+  redirect: true

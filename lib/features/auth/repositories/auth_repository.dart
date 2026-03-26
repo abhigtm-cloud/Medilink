@@ -12,9 +12,7 @@ class AuthRepository {
   /// Stream of [AppUser] used to drive auth state in the app.
   Stream<AppUser?> authStateChanges() {
     print('DEBUG: AuthRepository.authStateChanges() - Creating stream listener');
-    return _firebaseAuth.authStateChanges().doOnData((user) {
-      print('DEBUG: AuthRepository.authStateChanges STREAM EVENT - User: ${user?.email}');
-    }).map(
+    return _firebaseAuth.authStateChanges().map(
           (user) {
             print('DEBUG: AuthRepository - Firebase authStateChanges emitted user: ${user?.email}');
             if (user == null) {
