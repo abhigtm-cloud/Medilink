@@ -58,7 +58,7 @@ class HospitalController extends StateNotifier<AsyncValue<Hospital?>> {
       // Check if admin already has a hospital
       try {
         final hasHospital = await _repo.adminHasHospital(userId).timeout(
-          const Duration(seconds: 15),
+          const Duration(seconds: 45),
           onTimeout: () => throw Exception('Request timeout - Please check your internet connection'),
         );
         if (hasHospital) {
@@ -76,7 +76,7 @@ class HospitalController extends StateNotifier<AsyncValue<Hospital?>> {
         hospital.copyWith(createdAt: DateTime.now()),
         userId,
       ).timeout(
-        const Duration(seconds: 30),
+        const Duration(seconds: 60),
         onTimeout: () => throw Exception('Hospital creation timeout - Please check your internet connection and try again'),
       );
       state = AsyncValue.data(createdHospital);
