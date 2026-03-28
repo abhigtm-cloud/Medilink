@@ -5,6 +5,8 @@ import 'package:medilink/features/home/providers/slot_provider.dart';
 import 'package:medilink/features/home/providers/booking_provider.dart';
 import 'package:medilink/features/home/models/booking.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
+import 'package:medilink/core/services/location_service.dart';
+import 'package:medilink/features/home/providers/hospital_provider.dart';
 
 class DoctorBookingScreen extends ConsumerStatefulWidget {
   final String hospitalId;
@@ -76,6 +78,45 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
             ),
           ],
         ),
+        actions: [
+          // Directions Button
+          Consumer(
+            builder: (context, ref, _) {
+              return IconButton(
+                icon: Icon(Icons.directions, color: AppColors.primary),
+                onPressed: () async {
+                  try {
+                    final hospitalAsync = ref.read(
+                      getHospitalByIdProvider(widget.hospitalId),
+                    );
+                    hospitalAsync.whenData((hospital) {
+                      if (hospital != null && 
+                          hospital.latitude != null && 
+                          hospital.longitude != null) {
+                        LocationService.openGoogleMaps(
+                          latitude: hospital.latitude!,
+                          longitude: hospital.longitude!,
+                          locationName: hospital.name,
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Hospital location not available'),
+                          ),
+                        );
+                      }
+                    });
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: $e')),
+                    );
+                  }
+                },
+                tooltip: 'Get Directions',
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
