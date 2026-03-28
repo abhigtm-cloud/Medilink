@@ -1,6 +1,6 @@
 import 'package:geolocator/geolocator.dart';
-import 'package:geolocator/geolocator.dart' show placemarkFromCoordinates;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:geocoding/geocoding.dart';
 
 class LocationService {
   /// Get current location of device
@@ -35,37 +35,6 @@ class LocationService {
     }
   }
 
-  /// Get place name from coordinates using reverse geocoding
-  static Future<String> getPlaceNameFromCoordinates(double latitude, double longitude) async {
-    try {
-      final placemarks = await placemarkFromCoordinates(latitude, longitude);
-      
-      if (placemarks.isNotEmpty) {
-        final place = placemarks.first;
-        // Build a readable address from place information
-        final parts = <String>[];
-        
-        if (place.name != null && place.name!.isNotEmpty) parts.add(place.name!);
-        if (place.thoroughfare != null && place.thoroughfare!.isNotEmpty) parts.add(place.thoroughfare!);
-        if (place.subLocality != null && place.subLocality!.isNotEmpty) parts.add(place.subLocality!);
-        if (place.locality != null && place.locality!.isNotEmpty) parts.add(place.locality!);
-        if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) parts.add(place.administrativeArea!);
-        
-        final address = parts.join(', ');
-        print('DEBUG: Reverse geocoding - Got place name: $address');
-        
-        return address.isNotEmpty ? address : formatCoordinates(latitude, longitude);
-      }
-      
-      // Fallback to coordinates if no place name found
-      return formatCoordinates(latitude, longitude);
-    } catch (e) {
-      print('DEBUG: Error getting place name: $e');
-      // Fallback to coordinates
-      return formatCoordinates(latitude, longitude);
-    }
-  }
-
   /// Open Google Maps for a specific location
   static Future<void> openGoogleMaps({
     required double latitude,
@@ -86,6 +55,32 @@ class LocationService {
       }
     } catch (e) {
       print('DEBUG: Error opening Google Maps: $e');
+    }
+  }
+
+  /// Get place name from coordinates (reverse geocoding)
+  static Future<String> getPlaceName(double latitude, double longitude) async {
+    try {
+      final List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+      if (placemarks.isNotEmpty) {
+        final Placemark place = placemarks.first;
+        // Try to build a readable address
+        final List<String> addressParts = [];
+        if (place.name != null && place.name!.isNotEmpty) addressParts.add(place.name!);
+        if (place.locality != null && place.locality!.isNotEmpty) addressParts.add(place.locality!);
+        if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) addressParts.add(place.administrativeArea!);
+        if (place.country != null && place.country!.isNotEmpty) addressParts.add(place.country!);
+        
+        if (addressParts.isNotEmpty) {
+          return addressParts.join(', ');
+        }
+      }
+      // Fallback to coordinates if place name not found
+      print('DEBUG: No place name found, using coordinates');
+      return formatCoordinates(latitude, longitude);
+    } catch (e) {
+      print('DEBUG: Error getting place name: $e');
+      return formatCoordinates(latitude, longitude);
     }
   }
 

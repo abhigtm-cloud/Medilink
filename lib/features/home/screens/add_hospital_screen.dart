@@ -10,7 +10,6 @@ import 'package:medilink/features/home/providers/hospital_provider.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
 import 'package:medilink/core/utils/slot_generator.dart';
 import 'package:medilink/features/home/providers/slot_provider.dart';
-import 'package:medilink/core/services/image_service.dart';
 
 class AddHospitalAndDoctorsScreen extends ConsumerStatefulWidget {
   const AddHospitalAndDoctorsScreen({super.key});
@@ -72,59 +71,18 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
         });
 
         final File imageFile = File(image.path);
-
-        // Validate image before processing
-        final validationResult = await ImageService.validateImage(imageFile);
-        if (!validationResult.isValid) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(validationResult.message),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          setState(() {
-            _isUploadingImage = false;
-          });
-          return;
-        }
-
-        // Compress and optimize image
-        final optimizedBase64 = await ImageService.imageToOptimizedBase64(
-          imageFile,
-          quality: 85,
-        );
-
-        // Final size check
-        if (!ImageService.isBase64SizeAcceptable(optimizedBase64)) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Image still too large after compression. Maximum is 2MB.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          setState(() {
-            _isUploadingImage = false;
-          });
-          return;
-        }
+        final bytes = await imageFile.readAsBytes();
+        final base64Image = base64Encode(bytes);
 
         setState(() {
           _hospitalImage = imageFile;
-          _hospitalPhotoBase64 = optimizedBase64;
+          _hospitalPhotoBase64 = base64Image;
           _isUploadingImage = false;
         });
 
         if (mounted) {
-          final sizeKB = (optimizedBase64.length * 3 / 4 / 1024).toStringAsFixed(2);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('✅ Photo selected ($sizeKB KB)'),
-              backgroundColor: Colors.green,
-            ),
+            const SnackBar(content: Text('✅ Photo selected')),
           );
         }
       }
@@ -134,9 +92,6 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
           SnackBar(content: Text('Error picking image: $e')),
         );
       }
-      setState(() {
-        _isUploadingImage = false;
-      });
     }
   }
 

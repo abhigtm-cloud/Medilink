@@ -27,7 +27,7 @@ class UserHomeScreen extends ConsumerStatefulWidget {
 class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
   int _selectedBottomNav = 0;
   Position? _currentPosition;
-  String _currentPlaceName = 'Getting location...';
+  String? _currentPlaceName;
   bool _loadingLocation = true;
 
   @override
@@ -39,33 +39,18 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
   Future<void> _loadCurrentLocation() async {
     final position = await LocationService.getCurrentLocation();
     if (mounted) {
+      String? placeName;
+      if (position != null) {
+        placeName = await LocationService.getPlaceName(
+          position.latitude,
+          position.longitude,
+        );
+      }
       setState(() {
         _currentPosition = position;
+        _currentPlaceName = placeName;
         _loadingLocation = false;
       });
-      
-      // Get place name from coordinates
-      if (position != null) {
-        _loadPlaceName(position.latitude, position.longitude);
-      }
-    }
-  }
-
-  Future<void> _loadPlaceName(double latitude, double longitude) async {
-    try {
-      final placeName = await LocationService.getPlaceNameFromCoordinates(latitude, longitude);
-      if (mounted) {
-        setState(() {
-          _currentPlaceName = placeName;
-        });
-      }
-    } catch (e) {
-      print('DEBUG: Error loading place name: $e');
-      if (mounted) {
-        setState(() {
-          _currentPlaceName = LocationService.formatCoordinates(latitude, longitude);
-        });
-      }
     }
   }
 
@@ -410,11 +395,18 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                     'Loading location...',
                     style: Theme.of(context).textTheme.titleSmall,
                   )
-                else if (_currentPosition != null)
+                else if (_currentPosition != null && _currentPlaceName != null)
                   Text(
-                    _currentPlaceName,
+                    _currentPlaceName!,
                     style: Theme.of(context).textTheme.titleSmall,
                     maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  )
+                else if (_currentPosition != null)
+                  Text(
+                    '${_currentPosition!.latitude.toStringAsFixed(4)}, ${_currentPosition!.longitude.toStringAsFixed(4)}',
+                    style: Theme.of(context).textTheme.titleSmall,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   )
                 else
