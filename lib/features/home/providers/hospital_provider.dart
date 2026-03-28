@@ -47,31 +47,41 @@ class HospitalController extends StateNotifier<AsyncValue<Hospital?>> {
   Future<void> createHospital(Hospital hospital) async {
     state = const AsyncValue.loading();
     try {
-      // Use watch() instead of read() to get live auth state after operations
-      final authState = _read.watch(authStateChangesProvider);
-      final user = authState.maybeWhen(
-        data: (u) => u,
-        orElse: () => null,
-      );
+      // Get current user UID directly from Firebase (no stream timeout issues)
+      final authRepo = _read.read(authRepositoryProvider);
+      final userId = authRepo.getCurrentUserUid();
       
-      if (user == null) {
-        throw Exception('User not authenticated');
+      if (userId == null || userId.isEmpty) {
+        throw Exception('User not authenticated - Please sign in again');
       }
 
       // Check if admin already has a hospital
-      if (user.role.isHospitalAdmin) {
-        final hasHospital = await _repo.adminHasHospital(user.uid);
+      try {
+        final hasHospital = await _repo.adminHasHospital(userId).timeout(
+          const Duration(seconds: 15),
+          onTimeout: () => throw Exception('Request timeout - Please check your internet connection'),
+        );
         if (hasHospital) {
           throw Exception('Hospital admins can only create one hospital');
         }
+      } catch (e) {
+        if (e.toString().contains('timeout') || e.toString().contains('internet')) {
+          rethrow;
+        }
+        print('DEBUG: Error checking admin hospital: $e');
+        // Continue anyway if check fails
       }
       
       final createdHospital = await _repo.createHospital(
         hospital.copyWith(createdAt: DateTime.now()),
-        user.uid,
+        userId,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw Exception('Hospital creation timeout - Please check your internet connection and try again'),
       );
       state = AsyncValue.data(createdHospital);
     } catch (e, st) {
+      print('DEBUG: createHospital error: $e');
       state = AsyncValue.error(e, st);
     }
   }
@@ -83,9 +93,9 @@ class HospitalController extends StateNotifier<AsyncValue<Hospital?>> {
       await _repo.deleteHospital(hospitalId);
       
       // Invalidate cache and refresh auth state to ensure consistency
-      await _read.refresh(authStateChangesProvider);
-      await _read.refresh(getAdminHospitalsProvider);
-      await _read.refresh(getAllHospitalsProvider);
+      _read.refresh(authStateChangesProvider);
+      _read.refresh(getAdminHospitalsProvider);
+      _read.refresh(getAllHospitalsProvider);
       
       state = AsyncValue.data(null);
     } catch (e, st) {
