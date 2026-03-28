@@ -35,15 +35,56 @@ class EmailService {
     required String specialization,
   }) async {
     try {
-      print('DEBUG: [EMAIL STUB] Booking confirmation for customer: $customerEmail');
-      print('DEBUG: [EMAIL STUB] Booking confirmation for doctor: $doctorEmail');
-      print('DEBUG: [EMAIL STUB] Appointment: $appointmentDate at $appointmentTime');
-      
-      // TODO: Implement actual emailjs.send() calls once API is finalized
-      // For now, just log the email data
+      // Email to customer with doctor details
+      final customerEmailParams = {
+        'to_email': customerEmail,
+        'to_name': customerName,
+        'subject': 'Appointment Confirmation - Medilink',
+        'doctor_name': doctorName,
+        'doctor_specialization': specialization,
+        'hospital_name': hospitalName,
+        'appointment_date': appointmentDate,
+        'appointment_time': appointmentTime,
+        'message': 'Your appointment has been confirmed with Dr. $doctorName ($specialization) at $hospitalName on $appointmentDate at $appointmentTime. Please arrive 10 minutes early.',
+      };
+
+      await emailjs.send(
+        serviceId,
+        templateId,
+        customerEmailParams,
+        const emailjs.Options(
+          publicKey: publicKey,
+        ),
+      );
+
+      print('DEBUG: Customer confirmation email sent to: $customerEmail');
+
+      // Email to doctor with patient details
+      final doctorEmailParams = {
+        'to_email': doctorEmail,
+        'to_name': doctorName,
+        'subject': 'New Appointment Booked - Medilink',
+        'patient_name': customerName,
+        'patient_email': customerEmail,
+        'hospital_name': hospitalName,
+        'appointment_date': appointmentDate,
+        'appointment_time': appointmentTime,
+        'message': 'A new appointment has been booked with patient $customerName on $appointmentDate at $appointmentTime at $hospitalName.',
+      };
+
+      await emailjs.send(
+        serviceId,
+        templateId,
+        doctorEmailParams,
+        const emailjs.Options(
+          publicKey: publicKey,
+        ),
+      );
+
+      print('DEBUG: Doctor confirmation email sent to: $doctorEmail');
       return true;
     } catch (e) {
-      print('DEBUG: Error in booking confirmation email stub: $e');
+      print('DEBUG: Error in booking confirmation email: $e');
       return false;
     }
   }
@@ -56,13 +97,28 @@ class EmailService {
     required String appointmentTime,
   }) async {
     try {
-      print('DEBUG: [EMAIL STUB] Reminder email to: $email');
-      print('DEBUG: [EMAIL STUB] Appointment: $appointmentDate at $appointmentTime');
-      
-      // TODO: Implement actual emailjs.send() call once API is finalized
+      final reminderParams = {
+        'to_email': email,
+        'to_name': userName,
+        'subject': 'Appointment Reminder - Medilink',
+        'appointment_date': appointmentDate,
+        'appointment_time': appointmentTime,
+        'message': 'Reminder: You have an appointment on $appointmentDate at $appointmentTime. Please arrive 10 minutes early.',
+      };
+
+      await emailjs.send(
+        serviceId,
+        templateId,
+        reminderParams,
+        const emailjs.Options(
+          publicKey: publicKey,
+        ),
+      );
+
+      print('DEBUG: Reminder email sent to: $email');
       return true;
     } catch (e) {
-      print('DEBUG: Error in reminder email stub: $e');
+      print('DEBUG: Error in reminder email: $e');
       return false;
     }
   }
@@ -74,13 +130,27 @@ class EmailService {
     required String reason,
   }) async {
     try {
-      print('DEBUG: [EMAIL STUB] Cancellation email to: $email');
-      print('DEBUG: [EMAIL STUB] Reason: $reason');
-      
-      // TODO: Implement actual emailjs.send() call once API is finalized
+      final cancellationParams = {
+        'to_email': email,
+        'to_name': userName,
+        'subject': 'Appointment Cancelled - Medilink',
+        'reason': reason,
+        'message': 'Your appointment has been cancelled. Reason: $reason. If you have any questions, please contact our support team.',
+      };
+
+      await emailjs.send(
+        serviceId,
+        templateId,
+        cancellationParams,
+        const emailjs.Options(
+          publicKey: publicKey,
+        ),
+      );
+
+      print('DEBUG: Cancellation email sent to: $email');
       return true;
     } catch (e) {
-      print('DEBUG: Error in cancellation email stub: $e');
+      print('DEBUG: Error in cancellation email: $e');
       return false;
     }
   }
