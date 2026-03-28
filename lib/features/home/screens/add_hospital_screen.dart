@@ -29,6 +29,9 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
   bool _isUploadingImage = false;
 
   final List<DoctorFormData> _doctors = [];
+  double? _geocodedLatitude;
+  double? _geocodedLongitude;
+  bool _geocodingAddress = false;
 
   @override
   void dispose() {
@@ -52,6 +55,55 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
       _doctors[index].dispose();
       _doctors.removeAt(index);
     });
+  }
+
+  Future<void> _geocodeAddress() async {
+    final address = _hospitalAddressController.text.trim();
+    if (address.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter an address first')),
+      );
+      return;
+    }
+
+    setState(() => _geocodingAddress = true);
+
+    try {
+      final coords = await LocationService.getCoordinatesFromPlace(address);
+      if (coords != null) {
+        setState(() {
+          _geocodedLatitude = coords.latitude;
+          _geocodedLongitude = coords.longitude;
+          _geocodingAddress = false;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ Location found: ${coords.latitude.toStringAsFixed(4)}, ${coords.longitude.toStringAsFixed(4)}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        setState(() => _geocodingAddress = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Address not found. Please check and try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() => _geocodingAddress = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _pickHospitalPhoto() async {
@@ -133,6 +185,8 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
         address: _hospitalAddressController.text.trim(),
         contact: _hospitalContactController.text.trim(),
         photoUrl: _hospitalPhotoBase64,
+        latitude: _geocodedLatitude,
+        longitude: _geocodedLongitude,
       );
 
       await ref.read(hospitalControllerProvider.notifier).createHospital(hospital);
@@ -192,18 +246,37 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
           doctor.dispose();
         }
         _doctors.clear();
+        _geocodedLatitude = null;
+        _geocodedLongitude = null;
       });
       
-      // Wait for Firebase to save, then navigate back to hospital listing
+      // Wait for Firebase to save
       await Future.delayed(const Duration(milliseconds: 800));
+      
       if (mounted) {
-        Navigator.of(context).pop();
-        
-        // Show a brief message  
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Loading hospital details...'),
-            duration: Duration(seconds: 1),
+        // Show option to add more doctors or go back
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Hospital Created!'),
+            content: const Text('Would you like to add more doctors to this hospital?'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context); // Go back to hospital list
+                },
+                child: const Text('Go Back'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  // Refresh and stay on form to add more hospitals
+                  _addDoctorForm();
+                },
+                child: const Text('Add More Doctors'),
+              ),
+            ],
           ),
         );
       }
@@ -280,6 +353,33 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
                                   }
                                   return null;
                                 },
+                              ),
+                              const SizedBox(height: 8),
+                              // Geocode Button
+                              SizedBox(
+                                width: double.infinity,
+                                child: FilledButton.icon(
+                                  onPressed: _geocodingAddress ? null : _geocodeAddress,
+                                  icon: _geocodingAddress
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : const Icon(Icons.location_on),
+                                  label: Text(
+                                    _geocodingAddress
+                                        ? 'Finding Location...'
+                                        : (_geocodedLatitude != null
+                                            ? '✅ Location Found'
+                                            : '📍 Find Location on Map'),
+                                  ),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: _geocodedLatitude != null
+                                        ? Colors.green
+                                        : Colors.blue,
+                                  ),
+                                ),
                               ),
                               const SizedBox(height: 12),
                               TextFormField(

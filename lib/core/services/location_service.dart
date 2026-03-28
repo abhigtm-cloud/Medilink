@@ -1,6 +1,7 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:geocoding/geocoding.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
+export 'package:geocoding/geocoding.dart';
 
 class LocationService {
   /// Get current location of device
@@ -61,9 +62,9 @@ class LocationService {
   /// Get place name from coordinates (reverse geocoding)
   static Future<String> getPlaceName(double latitude, double longitude) async {
     try {
-      final List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+      final List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(latitude, longitude);
       if (placemarks.isNotEmpty) {
-        final Placemark place = placemarks.first;
+        final geocoding.Placemark place = placemarks.first;
         // Try to build a readable address
         final List<String> addressParts = [];
         if (place.name != null && place.name!.isNotEmpty) addressParts.add(place.name!);
@@ -87,6 +88,23 @@ class LocationService {
   /// Format coordinates to string
   static String formatCoordinates(double latitude, double longitude) {
     return '${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
+  }
+
+  /// Get coordinates from place name (forward geocoding)
+  static Future<({double latitude, double longitude})?> getCoordinatesFromPlace(String placeName) async {
+    try {
+      final locations = await geocoding.locationFromAddress(placeName);
+      if (locations.isNotEmpty) {
+        final location = locations.first;
+        print('DEBUG: Geocoded "$placeName" to ${location.latitude}, ${location.longitude}');
+        return (latitude: location.latitude, longitude: location.longitude);
+      }
+      print('DEBUG: No coordinates found for place: $placeName');
+      return null;
+    } catch (e) {
+      print('DEBUG: Error geocoding place name: $e');
+      return null;
+    }
   }
 
   /// Check if location is valid
