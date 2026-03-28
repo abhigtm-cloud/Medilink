@@ -47,7 +47,8 @@ class HospitalController extends StateNotifier<AsyncValue<Hospital?>> {
   Future<void> createHospital(Hospital hospital) async {
     state = const AsyncValue.loading();
     try {
-      final authState = _read.read(authStateChangesProvider);
+      // Use watch() instead of read() to get live auth state after operations
+      final authState = _read.watch(authStateChangesProvider);
       final user = authState.maybeWhen(
         data: (u) => u,
         orElse: () => null,
@@ -81,7 +82,8 @@ class HospitalController extends StateNotifier<AsyncValue<Hospital?>> {
       // Delete hospital and all related data
       await _repo.deleteHospital(hospitalId);
       
-      // Invalidate cache
+      // Invalidate cache and refresh auth state to ensure consistency
+      await _read.refresh(authStateChangesProvider);
       await _read.refresh(getAdminHospitalsProvider);
       await _read.refresh(getAllHospitalsProvider);
       
