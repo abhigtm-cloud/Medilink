@@ -82,37 +82,42 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
           // Directions Button
           Consumer(
             builder: (context, ref, _) {
-              return IconButton(
-                icon: Icon(Icons.directions, color: AppColors.primary),
-                onPressed: () async {
-                  try {
-                    final hospitalAsync = ref.read(
-                      getHospitalByIdProvider(widget.hospitalId),
-                    );
-                    hospitalAsync.whenData((hospital) {
-                      if (hospital != null && 
-                          hospital.latitude != null && 
-                          hospital.longitude != null) {
-                        LocationService.openGoogleMaps(
-                          latitude: hospital.latitude!,
-                          longitude: hospital.longitude!,
-                          locationName: hospital.name,
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Hospital location not available'),
-                          ),
-                        );
+              return FutureBuilder(
+                future: ref.read(getHospitalByIdProvider(widget.hospitalId).future),
+                builder: (context, snapshot) {
+                  return IconButton(
+                    icon: Icon(Icons.directions, color: AppColors.primary),
+                    onPressed: () async {
+                      try {
+                        final hospital = snapshot.data;
+                        if (hospital != null && 
+                            hospital.latitude != null && 
+                            hospital.longitude != null) {
+                          LocationService.openGoogleMaps(
+                            latitude: hospital.latitude!,
+                            longitude: hospital.longitude!,
+                            locationName: hospital.name,
+                          );
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Hospital location not available'),
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e')),
+                          );
+                        }
                       }
-                    });
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error: $e')),
-                    );
-                  }
+                    },
+                    tooltip: 'Get Directions',
+                  );
                 },
-                tooltip: 'Get Directions',
               );
             },
           ),

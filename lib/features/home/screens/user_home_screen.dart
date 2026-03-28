@@ -11,6 +11,7 @@ import 'package:medilink/features/home/screens/search_screen.dart';
 import 'package:medilink/features/home/screens/bookings_screen.dart';
 import 'package:medilink/features/home/screens/account_screen.dart';
 import 'package:medilink/features/home/screens/hospital_map_screen.dart';
+import 'package:medilink/features/home/screens/emergency_hospitals_screen.dart';
 import 'package:medilink/features/auth/screens/login_screen.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
@@ -112,82 +113,13 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
   }
 
   Future<void> _handleEmergency() async {
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Finding Nearest Hospital...'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            const Text('Locating your position...'),
-          ],
-        ),
+    // Navigate to emergency hospitals list (showing nearest first)
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const EmergencyHospitalsScreen(),
       ),
     );
-
-    try {
-      // Get all hospitals
-      final hospitalsAsync = ref.read(getAllHospitalsProvider);
-      final hospitals = hospitalsAsync.value ?? [];
-
-      if (hospitals.isEmpty) {
-        Navigator.pop(context); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No hospitals available')),
-        );
-        return;
-      }
-
-      // Get user's current location
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
-      // Find nearest hospital with coordinates
-      var nearestHospital = hospitals.first;
-      var minDistance = double.infinity;
-
-      for (final hospital in hospitals) {
-        if (hospital.latitude != null && hospital.longitude != null) {
-          final distance = EmergencyService.calculateDistance(
-            lat1: position.latitude,
-            lon1: position.longitude,
-            lat2: hospital.latitude!,
-            lon2: hospital.longitude!,
-          );
-
-          if (distance < minDistance) {
-            minDistance = distance;
-            nearestHospital = hospital;
-          }
-        }
-      }
-
-      Navigator.pop(context); // Close loading dialog
-
-      // Navigate to that hospital's doctor list
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => DoctorListScreen(
-            hospitalName: nearestHospital.name,
-            hospitalId: nearestHospital.id ?? '',
-          ),
-        ),
-      );
-    } catch (e) {
-      Navigator.pop(context); // Close loading dialog
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    }
   }
 
   PreferredSizeWidget _buildAppBar() {
