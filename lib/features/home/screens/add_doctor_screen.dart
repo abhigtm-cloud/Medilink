@@ -8,6 +8,7 @@ import 'package:medilink/features/home/models/slot.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
 import 'package:medilink/core/utils/slot_generator.dart';
 import 'package:medilink/features/home/providers/slot_provider.dart';
+import 'package:medilink/core/services/image_service.dart';
 
 class AddDoctorScreen extends ConsumerStatefulWidget {
   final String hospitalId;
@@ -523,17 +524,52 @@ class _DoctorFormWidgetState extends State<_DoctorFormWidget> {
 
       if (image != null) {
         final File imageFile = File(image.path);
-        final bytes = await imageFile.readAsBytes();
-        final base64Image = base64Encode(bytes);
+
+        // Validate image before processing
+        final validationResult = await ImageService.validateImage(imageFile);
+        if (!validationResult.isValid) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(validationResult.message),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+
+        // Compress and optimize image
+        final optimizedBase64 = await ImageService.imageToOptimizedBase64(
+          imageFile,
+          quality: 85,
+        );
+
+        // Final size check
+        if (!ImageService.isBase64SizeAcceptable(optimizedBase64)) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Image still too large after compression. Maximum is 2MB.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
 
         setState(() {
           widget.doctorForm.photoFile = imageFile;
-          widget.doctorForm.photoBase64 = base64Image;
+          widget.doctorForm.photoBase64 = optimizedBase64;
         });
 
         if (mounted) {
+          final sizeKB = (optimizedBase64.length * 3 / 4 / 1024).toStringAsFixed(2);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Photo selected')),
+            SnackBar(
+              content: Text('✅ Photo selected ($sizeKB KB)'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       }

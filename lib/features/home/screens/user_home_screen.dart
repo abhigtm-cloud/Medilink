@@ -27,6 +27,7 @@ class UserHomeScreen extends ConsumerStatefulWidget {
 class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
   int _selectedBottomNav = 0;
   Position? _currentPosition;
+  String _currentPlaceName = 'Getting location...';
   bool _loadingLocation = true;
 
   @override
@@ -42,6 +43,29 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
         _currentPosition = position;
         _loadingLocation = false;
       });
+      
+      // Get place name from coordinates
+      if (position != null) {
+        _loadPlaceName(position.latitude, position.longitude);
+      }
+    }
+  }
+
+  Future<void> _loadPlaceName(double latitude, double longitude) async {
+    try {
+      final placeName = await LocationService.getPlaceNameFromCoordinates(latitude, longitude);
+      if (mounted) {
+        setState(() {
+          _currentPlaceName = placeName;
+        });
+      }
+    } catch (e) {
+      print('DEBUG: Error loading place name: $e');
+      if (mounted) {
+        setState(() {
+          _currentPlaceName = LocationService.formatCoordinates(latitude, longitude);
+        });
+      }
     }
   }
 
@@ -388,9 +412,9 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                   )
                 else if (_currentPosition != null)
                   Text(
-                    '${_currentPosition!.latitude.toStringAsFixed(4)}, ${_currentPosition!.longitude.toStringAsFixed(4)}',
+                    _currentPlaceName,
                     style: Theme.of(context).textTheme.titleSmall,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   )
                 else

@@ -1,4 +1,5 @@
 import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart' show placemarkFromCoordinates;
 import 'package:url_launcher/url_launcher.dart';
 
 class LocationService {
@@ -34,6 +35,37 @@ class LocationService {
     }
   }
 
+  /// Get place name from coordinates using reverse geocoding
+  static Future<String> getPlaceNameFromCoordinates(double latitude, double longitude) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(latitude, longitude);
+      
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        // Build a readable address from place information
+        final parts = <String>[];
+        
+        if (place.name != null && place.name!.isNotEmpty) parts.add(place.name!);
+        if (place.thoroughfare != null && place.thoroughfare!.isNotEmpty) parts.add(place.thoroughfare!);
+        if (place.subLocality != null && place.subLocality!.isNotEmpty) parts.add(place.subLocality!);
+        if (place.locality != null && place.locality!.isNotEmpty) parts.add(place.locality!);
+        if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) parts.add(place.administrativeArea!);
+        
+        final address = parts.join(', ');
+        print('DEBUG: Reverse geocoding - Got place name: $address');
+        
+        return address.isNotEmpty ? address : formatCoordinates(latitude, longitude);
+      }
+      
+      // Fallback to coordinates if no place name found
+      return formatCoordinates(latitude, longitude);
+    } catch (e) {
+      print('DEBUG: Error getting place name: $e');
+      // Fallback to coordinates
+      return formatCoordinates(latitude, longitude);
+    }
+  }
+
   /// Open Google Maps for a specific location
   static Future<void> openGoogleMaps({
     required double latitude,
@@ -59,7 +91,7 @@ class LocationService {
 
   /// Format coordinates to string
   static String formatCoordinates(double latitude, double longitude) {
-    return '$latitude, $longitude';
+    return '${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
   }
 
   /// Check if location is valid
