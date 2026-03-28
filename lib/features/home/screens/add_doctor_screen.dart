@@ -80,8 +80,8 @@ class _AddDoctorScreenState extends ConsumerState<AddDoctorScreen> {
 
         if (!mounted) return;
 
-        // Small delay to ensure Firebase write completes
-        await Future.delayed(const Duration(milliseconds: 500));
+        // Wait for Firebase write and doctor list refresh
+        await Future.delayed(const Duration(milliseconds: 800));
       }
 
       if (!mounted) return;

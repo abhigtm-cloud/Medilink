@@ -51,8 +51,12 @@ class DoctorController extends StateNotifier<AsyncValue<Doctor?>> {
         doctor.copyWith(createdAt: DateTime.now()),
       );
       state = AsyncValue.data(createdDoctor);
+      
+      // Invalidate the doctor list cache to refresh it
+      _read.invalidate(getDoctorsByHospitalProvider(doctor.hospitalId));
 
     } catch (e, st) {
+      print('DEBUG: Error in createDoctor: $e');
       state = AsyncValue.error(e, st);
     }
   }
@@ -89,7 +93,7 @@ class DoctorController extends StateNotifier<AsyncValue<Doctor?>> {
       await _repo.deleteDoctor(hospitalId, doctorId);
 
       // Invalidate cache
-      await _read.refresh(getDoctorsByHospitalProvider(hospitalId));
+      _read.refresh(getDoctorsByHospitalProvider(hospitalId));
 
       state = AsyncValue.data(null);
     } catch (e, st) {
