@@ -52,36 +52,51 @@ class HospitalController extends StateNotifier<AsyncValue<Hospital?>> {
       final userId = authRepo.getCurrentUserUid();
       
       if (userId == null || userId.isEmpty) {
+        print('DEBUG: userId is null or empty - attempting direct Firebase Auth check');
         throw Exception('User not authenticated - Please sign in again');
       }
 
-      // Check if admin already has a hospital
+      print('DEBUG: User authenticated with UID: $userId');
+
+      // Check if admin already has a hospital - with extended timeout
       try {
+        print('DEBUG: Checking if admin already has hospital...');
         final hasHospital = await _repo.adminHasHospital(userId).timeout(
-          const Duration(seconds: 45),
-          onTimeout: () => throw Exception('Request timeout - Please check your internet connection'),
+          const Duration(seconds: 90),
+          onTimeout: () {
+            print('DEBUG: TIMEOUT during adminHasHospital check');
+            throw Exception('Server is slow - Please try again (authentication check timeout)');
+          },
         );
         if (hasHospital) {
           throw Exception('Hospital admins can only create one hospital');
         }
+        print('DEBUG: Admin hospital check passed');
       } catch (e) {
-        if (e.toString().contains('timeout') || e.toString().contains('internet')) {
+        if (e.toString().contains('timeout') || e.toString().contains('Server is slow')) {
+          print('DEBUG: Timeout caught, rethrowing');
           rethrow;
         }
         print('DEBUG: Error checking admin hospital: $e');
-        // Continue anyway if check fails
+        // Continue anyway if check fails (hospital might not exist yet)
       }
       
+      print('DEBUG: Creating hospital: ${hospital.name}');
       final createdHospital = await _repo.createHospital(
         hospital.copyWith(createdAt: DateTime.now()),
         userId,
       ).timeout(
-        const Duration(seconds: 60),
-        onTimeout: () => throw Exception('Hospital creation timeout - Please check your internet connection and try again'),
+        const Duration(seconds: 90),
+        onTimeout: () {
+          print('DEBUG: TIMEOUT during hospital creation');
+          throw Exception('Server is responding slowly - Please check your connection and try again (hospital creation timeout)');
+        },
       );
+      
+      print('DEBUG: Hospital created successfully with ID: ${createdHospital.id}');
       state = AsyncValue.data(createdHospital);
     } catch (e, st) {
-      print('DEBUG: createHospital error: $e');
+      print('DEBUG: createHospital error: $e\nStacktrace: $st');
       state = AsyncValue.error(e, st);
     }
   }

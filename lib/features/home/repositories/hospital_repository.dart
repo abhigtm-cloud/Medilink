@@ -1,4 +1,5 @@
 import 'package:firebase_database/firebase_database.dart';
+import 'dart:async';
 import 'package:medilink/features/home/models/hospital.dart';
 
 /// Repository for hospital-related operations
@@ -6,6 +7,44 @@ class HospitalRepository {
   final _database = FirebaseDatabase.instance.ref();
   
   static const String _hospitalsPath = 'hospitals';
+  static const int _maxRetries = 3;
+  static const Duration _queryTimeout = Duration(seconds: 30);
+
+  /// Retry helper for Firebase operations
+  Future<T> _withRetry<T>(
+    Future<T> Function() operation, {
+    int maxRetries = 3,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    int attempts = 0;
+    while (attempts < maxRetries) {
+      try {
+        attempts++;
+        print('DEBUG: Firebase query attempt $attempts/$maxRetries');
+        
+        final result = await operation().timeout(
+          timeout,
+          onTimeout: () {
+            throw TimeoutException('Firebase operation timed out after ${timeout.inSeconds}s');
+          },
+        );
+        
+        print('DEBUG: Firebase query successful on attempt $attempts');
+        return result;
+      } catch (e) {
+        print('DEBUG: Firebase query failed on attempt $attempts: $e');
+        
+        if (attempts >= maxRetries) {
+          throw Exception('Failed after $maxRetries attempts: $e');
+        }
+        
+        // Wait before retrying (exponential backoff)
+        await Future.delayed(Duration(seconds: attempts));
+      }
+    }
+    
+    throw Exception('Max retries exceeded');
+  }
   
   /// Create a new hospital
   Future<Hospital> createHospital(Hospital hospital, String userId) async {
@@ -23,7 +62,7 @@ class HospitalRepository {
   
   /// Get all hospitals
   Future<List<Hospital>> getAllHospitals() async {
-    try {
+    return _withRetry(() async {
       final snapshot = await _database.child(_hospitalsPath).get();
       
       if (!snapshot.exists) {
@@ -45,14 +84,12 @@ class HospitalRepository {
       });
       
       return hospitals;
-    } catch (e) {
-      throw Exception('Failed to fetch hospitals: $e');
-    }
+    }, maxRetries: _maxRetries, timeout: _queryTimeout);
   }
   
   /// Get hospitals by admin ID
   Future<List<Hospital>> getHospitalsByAdmin(String adminId) async {
-    try {
+    return _withRetry(() async {
       // Fetch all hospitals and filter in code (avoid Firebase index requirement)
       final snapshot = await _database.child(_hospitalsPath).get();
       
@@ -77,9 +114,7 @@ class HospitalRepository {
       });
       
       return hospitals;
-    } catch (e) {
-      throw Exception('Failed to fetch hospitals: $e');
-    }
+    }, maxRetries: _maxRetries, timeout: _queryTimeout);
   }
   
   /// Get a specific hospital by ID

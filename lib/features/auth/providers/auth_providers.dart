@@ -36,10 +36,10 @@ final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
 final authStateChangesProvider = StreamProvider<AppUser?>((ref) {
   final repo = ref.watch(authRepositoryProvider);
   return repo.authStateChanges().asBroadcastStream().timeout(
-    const Duration(seconds: 20),
+    const Duration(seconds: 60),
     onTimeout: (sink) {
-      print('DEBUG: authStateChangesProvider - Stream timeout');
-      sink.addError(Exception('Authentication timeout - please check your connection'));
+      print('DEBUG: authStateChangesProvider - Stream timeout after 60s');
+      sink.addError(Exception('Authentication service is slow - please check your internet connection and try again'));
     },
   );
 });
@@ -72,7 +72,7 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
       
       // Force refresh the auth state stream to ensure it emits the new user
       print('DEBUG: AuthController.signIn - Triggering authStateChangesProvider refresh');
-      await _read.refresh(authStateChangesProvider);
+      _read.refresh(authStateChangesProvider);
       
     } catch (e, st) {
       print('DEBUG: AuthController.signIn - Error for user $email: $e');
@@ -99,7 +99,7 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
       
       // Force refresh the auth state stream
       print('DEBUG: AuthController.register - Triggering authStateChangesProvider refresh');
-      await _read.refresh(authStateChangesProvider);
+      _read.refresh(authStateChangesProvider);
       
     } catch (e, st) {
       print('DEBUG: AuthController.register - Error for user $email: $e');
@@ -116,7 +116,7 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
       
       // Force refresh the auth state stream to ensure logout completes
       print('DEBUG: AuthController.signOut - Triggering authStateChangesProvider refresh');
-      await _read.refresh(authStateChangesProvider);
+      _read.refresh(authStateChangesProvider);
       
     } catch (e, st) {
       state = AsyncValue.error(e, st);
