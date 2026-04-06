@@ -1,5 +1,5 @@
 # Build stage - Build Flutter web app
-FROM cirrusci/flutter:latest as builder
+FROM cirrusci/flutter:3.16 as builder
 
 WORKDIR /app
 COPY . .
