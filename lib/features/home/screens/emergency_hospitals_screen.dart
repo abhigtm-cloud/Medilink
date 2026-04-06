@@ -64,7 +64,7 @@ class _EmergencyHospitalsScreenState
 
       return hospitalsWithDistance;
     } catch (e) {
-      print('DEBUG: Error getting hospitals: $e');
+
       return [];
     }
   }

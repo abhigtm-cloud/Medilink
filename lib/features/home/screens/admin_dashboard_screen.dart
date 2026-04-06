@@ -209,7 +209,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               child: CircularProgressIndicator(),
             ),
             error: (error, st) {
-              print('ERROR loading hospitals: $error\n$st');
+
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,

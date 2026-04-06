@@ -294,7 +294,7 @@ class HelpSupportScreen extends StatelessWidget {
     try {
       await launchUrl(emailUri);
     } catch (e) {
-      print('Could not launch email: $e');
+
     }
   }
 
@@ -303,17 +303,17 @@ class HelpSupportScreen extends StatelessWidget {
     try {
       await launchUrl(callUri);
     } catch (e) {
-      print('Could not launch call: $e');
+
     }
   }
 
   void _showChatDialog() {
     // You can integrate a chat service here
-    print('Chat feature - integrate with your chat service');
+
   }
 
   void _showResourceDialog(String title, String content) {
     // Show resource content in a dialog
-    print('$title: $content');
+
   }
 }

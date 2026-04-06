@@ -58,7 +58,7 @@ class BookingsScreen extends ConsumerWidget {
                     pastBookings.add(booking);
                   }
                 } catch (e) {
-                  print('Error parsing date: ${booking.date}');
+
                 }
               }
 

@@ -64,7 +64,6 @@ class EmergencyService {
 
       return hospitalsWithDistance.first['hospital'] as Hospital;
     } catch (e) {
-      print('DEBUG: Error finding nearest hospital: $e');
       return null;
     }
   }

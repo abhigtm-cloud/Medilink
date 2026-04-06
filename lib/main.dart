@@ -21,7 +21,7 @@ Future<void> main() async {
   // Initialize OFFLINE-FIRST caching service
   // Data persists indefinitely even when system is OFF or on different network
   await CacheService.initialize();
-  print('DEBUG: 📱 MOBILE-FIRST APP - Offline persistence enabled');
+
 
   // Initialize EmailJS for sending booking confirmations
   await EmailService.initialize();
@@ -36,7 +36,7 @@ Future<void> _addSampleHospitalsIfNeeded() async {
     final snapshot = await db.child('hospitals').get();
     
     if (!snapshot.exists) {
-      print('DEBUG: 🏥 Adding sample hospitals to Firebase...');
+
       
       await db.child('hospitals').set({
         'hospital_1': {
@@ -73,12 +73,12 @@ Future<void> _addSampleHospitalsIfNeeded() async {
         },
       });
       
-      print('DEBUG: ✅ Sample hospitals added successfully!');
+
     } else {
-      print('DEBUG: 📊 Hospitals data already exists in Firebase');
+
     }
   } catch (e) {
-    print('DEBUG: ⚠️ Error adding sample hospitals: $e');
+
     // Don't block app startup if this fails
   }
 }

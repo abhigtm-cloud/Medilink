@@ -281,7 +281,7 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
       }
     } catch (e) {
       if (!mounted) return;
-      print('Error creating hospital: $e'); // Debug log
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString()}'),
