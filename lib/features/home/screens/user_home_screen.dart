@@ -5,7 +5,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:medilink/core/theme/app_colors.dart';
 import 'package:medilink/core/theme/app_theme.dart';
 import 'package:medilink/core/services/location_service.dart';
-import 'package:medilink/core/services/emergency_service.dart';
 import 'package:medilink/features/home/screens/doctor_list_screen.dart';
 import 'package:medilink/features/home/screens/search_screen.dart';
 import 'package:medilink/features/home/screens/bookings_screen.dart';

@@ -1,4 +1,5 @@
 import 'package:firebase_database/firebase_database.dart';
+import 'package:medilink/core/services/cache_service.dart';
 import 'package:medilink/features/home/models/doctor.dart';
 import 'package:medilink/features/home/models/slot.dart';
 
@@ -112,34 +113,77 @@ class DoctorRepository {
     }
   }
   
-  /// Get doctors for a specific hospital
+  /// Get doctors for a specific hospital (Cache-First for offline support)
   Future<List<Doctor>> getDoctorsByHospital(String hospitalId) async {
+    // Try cache first - supports offline mode
+    final cachedDoctors = CacheService.getDoctorsByHospital(hospitalId);
+    if (cachedDoctors != null && cachedDoctors.isNotEmpty) {
+      print('DEBUG: 📦 Using offline cache for doctors in $hospitalId');
+      try {
+        return (cachedDoctors)
+            .map((item) => Doctor.fromJson(
+                  Map<String, dynamic>.from(item as Map),
+                  docId: (item)['id'],
+                ))
+            .toList();
+      } catch (e) {
+        print('DEBUG: Error parsing cached doctors: $e');
+        // Fall through to Firebase
+      }
+    }
+
+    // Cache miss, fetch from Firebase
     try {
+      print('DEBUG: 🔄 Fetching doctors from Firebase for $hospitalId...');
       final snapshot = await _database
           .child(_doctorsPath)
           .child(hospitalId)
           .get();
       
       if (!snapshot.exists) {
+        print('DEBUG: ℹ️ No doctors found for hospital $hospitalId');
         return [];
       }
       
       final doctors = <Doctor>[];
       final data = snapshot.value as Map<dynamic, dynamic>? ?? {};
+      final cacheData = <Map<String, dynamic>>[];
       
       data.forEach((key, value) {
         if (value is Map<dynamic, dynamic>) {
-          doctors.add(
-            Doctor.fromJson(
+          try {
+            final doctor = Doctor.fromJson(
               Map<String, dynamic>.from(value),
               docId: key,
-            ),
-          );
+            );
+            doctors.add(doctor);
+            cacheData.add(doctor.toJson());
+          } catch (e) {
+            print('DEBUG: Error parsing doctor: $e');
+          }
         }
       });
       
+      // Cache for offline access
+      if (doctors.isNotEmpty) {
+        await CacheService.setDoctorsByHospital(hospitalId, cacheData);
+        print('DEBUG: ✅ Cached ${doctors.length} doctors for $hospitalId');
+      }
+      
       return doctors;
     } catch (e) {
+      print('DEBUG: 🔥 Firebase error fetching doctors: $e');
+      // If Firebase fails, try cache as fallback
+      final cachedDoctors = CacheService.getDoctorsByHospital(hospitalId);
+      if (cachedDoctors != null && cachedDoctors.isNotEmpty) {
+        print('DEBUG: ⚠️ Using offline cache as fallback');
+        return (cachedDoctors)
+            .map((item) => Doctor.fromJson(
+                  Map<String, dynamic>.from(item as Map),
+                  docId: (item)['id'],
+                ))
+            .toList();
+      }
       throw Exception('Failed to fetch doctors: $e');
     }
   }

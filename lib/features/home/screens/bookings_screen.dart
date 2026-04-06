@@ -6,6 +6,7 @@ import 'package:medilink/features/auth/providers/auth_providers.dart';
 import 'package:medilink/features/home/providers/booking_provider.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
+import 'package:medilink/features/home/models/booking.dart';
 
 /// Bookings Screen showing user's appointment history and upcoming bookings.
 class BookingsScreen extends ConsumerWidget {
@@ -273,19 +274,15 @@ class _BookingCardWidget extends ConsumerWidget {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: isUpcoming
-                              ? AppColors.primary.withOpacity(0.1)
-                              : AppColors.textSecondaryLight.withOpacity(0.1),
+                          color: _getStatusBgColor(booking.status).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          isUpcoming ? 'Upcoming' : 'Completed',
+                          _getStatusText(booking.status, isUpcoming),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: isUpcoming
-                                ? AppColors.primary
-                                : AppColors.textSecondaryLight,
+                            color: _getStatusBgColor(booking.status),
                           ),
                         ),
                       ),
@@ -424,5 +421,37 @@ class _BookingCardWidget extends ConsumerWidget {
       'Dec'
     ];
     return months[month - 1];
+  }
+
+  Color _getStatusBgColor(dynamic status) {
+    final statusStr = status.toString().split('.').last;
+    switch (statusStr) {
+      case 'pending':
+        return AppColors.warning;
+      case 'confirmed':
+        return AppColors.success;
+      case 'cancelled':
+        return AppColors.error;
+      case 'completed':
+        return AppColors.success;
+      default:
+        return AppColors.textSecondaryLight;
+    }
+  }
+
+  String _getStatusText(dynamic status, bool isUpcoming) {
+    final statusStr = status.toString().split('.').last;
+    switch (statusStr) {
+      case 'pending':
+        return 'Waiting Approval';
+      case 'confirmed':
+        return isUpcoming ? 'Confirmed' : 'Completed';
+      case 'cancelled':
+        return 'Cancelled';
+      case 'completed':
+        return 'Completed';
+      default:
+        return 'Unknown';
+    }
   }
 }

@@ -93,7 +93,7 @@ class DoctorController extends StateNotifier<AsyncValue<Doctor?>> {
       await _repo.deleteDoctor(hospitalId, doctorId);
 
       // Invalidate cache
-      _read.refresh(getDoctorsByHospitalProvider(hospitalId));
+      await _read.refresh(getDoctorsByHospitalProvider(hospitalId));
 
       state = AsyncValue.data(null);
     } catch (e, st) {

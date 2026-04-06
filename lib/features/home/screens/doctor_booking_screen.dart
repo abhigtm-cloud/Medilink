@@ -411,7 +411,11 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment booked successfully!')),
+        const SnackBar(
+          content: Text('✅ Appointment booked! Details sent to your email'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
       );
 
       // Wait a moment for the cache to refresh before navigating

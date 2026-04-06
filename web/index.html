@@ -35,6 +35,25 @@
   <!-- Firebase SDK: must load before Flutter so Dart firebase_core can use it -->
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+
+  <!-- Performance API polyfills for compatibility -->
+  <script>
+    // Polyfill performance API
+    if (!window.performance) window.performance = {};
+    if (!window.performance.clearMarks) window.performance.clearMarks = function() {};
+    if (!window.performance.mark) window.performance.mark = function() {};
+    if (!window.performance.measure) window.performance.measure = function() {};
+    if (!window.performance.clearMeasures) window.performance.clearMeasures = function() {};
+    if (!window.performance.getEntriesByName) window.performance.getEntriesByName = function() { return []; };
+    if (!window.performance.getEntriesByType) window.performance.getEntriesByType = function() { return []; };
+    
+    // Polyfill mgt object (measurement/metrics tracking)
+    if (!window.mgt) window.mgt = {};
+    if (!window.mgt.clearMarks) window.mgt.clearMarks = function() {};
+    if (!window.mgt.mark) window.mgt.mark = function() {};
+    if (!window.mgt.measure) window.mgt.measure = function() {};
+    if (!window.mgt.clearMeasures) window.mgt.clearMeasures = function() {};
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

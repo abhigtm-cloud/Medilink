@@ -60,6 +60,10 @@ dependencies:
   # Maps integration
   google_maps_flutter: ^2.5.0
 
+  # Local caching
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

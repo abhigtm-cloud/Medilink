@@ -59,133 +59,187 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           );
         }
 
-        // Initialize controllers if empty
-        if (nameController.text.isEmpty) {
-          nameController.text = user.displayName ?? '';
-          emailController.text = user.email;
-          phoneController.text = user.phoneNumber ?? '';
-          dobController.text = user.dateOfBirth ?? '';
-          addressController.text = user.address ?? '';
-          bloodGroupController.text = user.bloodGroup ?? '';
-          selectedGender = user.gender;
-        }
+        // Load real user profile from Firebase
+        final userProfileAsync = ref.watch(getUserProfileProvider(user.uid));
 
-        return Scaffold(
-          backgroundColor: AppColors.surfaceLight,
-          appBar: AppBar(
-            backgroundColor: AppColors.cardLight,
-            elevation: 1,
-            title: Text(
-              'My Account',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            centerTitle: false,
-            automaticallyImplyLeading: false,
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Center(
-                  child: FilledButton.icon(
-                    onPressed: _isEditing ? _saveProfile : () {
-                      setState(() => _isEditing = true);
-                    },
-                    icon: Icon(_isEditing ? Icons.check : Icons.edit),
-                    label: Text(_isEditing ? 'Save' : 'Edit'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _isEditing ? Colors.green : AppColors.primary,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
+        return userProfileAsync.when(
+          data: (profileUser) {
+            final displayUser = profileUser ?? user;
+
+            // Initialize controllers if empty (load from Firebase profile)
+            if (nameController.text.isEmpty) {
+              nameController.text = displayUser.displayName ?? '';
+              emailController.text = displayUser.email;
+              phoneController.text = displayUser.phoneNumber ?? '';
+              dobController.text = displayUser.dateOfBirth ?? '';
+              addressController.text = displayUser.address ?? '';
+              bloodGroupController.text = displayUser.bloodGroup ?? '';
+              selectedGender = displayUser.gender;
+            }
+
+            return Scaffold(
+              backgroundColor: AppColors.surfaceLight,
+              appBar: AppBar(
+                backgroundColor: AppColors.cardLight,
+                elevation: 1,
+                title: Text(
+                  'My Account',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              )
-            ],
-          ),
-          body: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              // Profile Header
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.cardLight,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderLight, width: 1),
-                  boxShadow: AppTheme.cardShadow,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(40),
-                      ),
-                      child: Icon(
-                        Icons.account_circle,
-                        size: 60,
-                        color: AppColors.primary,
+                centerTitle: false,
+                automaticallyImplyLeading: false,
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: Center(
+                      child: FilledButton.icon(
+                        onPressed: _isEditing ? _saveProfile : () {
+                          setState(() => _isEditing = true);
+                        },
+                        icon: Icon(_isEditing ? Icons.check : Icons.edit),
+                        label: Text(_isEditing ? 'Save' : 'Edit'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _isEditing ? Colors.green : AppColors.primary,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    if (_isEditing)
-                      TextField(
-                        controller: nameController,
-                        decoration: InputDecoration(
-                          hintText: 'Full Name',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                  )
+                ],
+              ),
+              body: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  // Profile Header
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardLight,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.borderLight, width: 1),
+                      boxShadow: AppTheme.cardShadow,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(40),
+                          ),
+                          child: Icon(
+                            Icons.account_circle,
+                            size: 60,
+                            color: AppColors.primary,
                           ),
                         ),
-                        textAlign: TextAlign.center,
-                      )
-                    else
-                      Text(
-                        nameController.text.isNotEmpty ? nameController.text : 'User',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimaryLight,
+                        const SizedBox(height: 12),
+                        if (_isEditing)
+                          TextField(
+                            controller: nameController,
+                            decoration: InputDecoration(
+                              hintText: 'Full Name',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            textAlign: TextAlign.center,
+                          )
+                        else
+                          Text(
+                            nameController.text.isNotEmpty ? nameController.text : 'User',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimaryLight,
+                            ),
+                          ),
+                        const SizedBox(height: 4),
+                        Text(
+                          emailController.text,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondaryLight,
+                          ),
                         ),
-                      ),
-                    const SizedBox(height: 4),
-                    Text(
-                      emailController.text,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondaryLight,
-                      ),
+                      ],
                     ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Edit Form
+                  if (_isEditing) ...[
+                    _buildEditField('Full Name', nameController),
+                    _buildEditField('Email', emailController, enabled: false),
+                    _buildEditField('Phone Number', phoneController),
+                    _buildEditField('Date of Birth (DD/MM/YYYY)', dobController),
+                    _buildGenderField(),
+                    _buildEditField('Blood Group', bloodGroupController),
+                    _buildEditField('Address', addressController, maxLines: 3),
+                  ] else ...[
+                    // View Profile
+                    _buildProfileCard('Name', nameController.text.isNotEmpty ? nameController.text : '—'),
+                    _buildProfileCard('Email', emailController.text),
+                    _buildProfileCard('Phone', phoneController.text.isNotEmpty ? phoneController.text : '—'),
+                    _buildProfileCard('Date of Birth', dobController.text.isNotEmpty ? dobController.text : '—'),
+                    _buildProfileCard('Gender', selectedGender ?? '—'),
+                    _buildProfileCard('Blood Group', bloodGroupController.text.isNotEmpty ? bloodGroupController.text : '—'),
+                    _buildProfileCard('Address', addressController.text.isNotEmpty ? addressController.text : '—'),
                   ],
+                ],
+              ),
+            );
+          },
+          loading: () => Scaffold(
+            backgroundColor: AppColors.surfaceLight,
+            appBar: AppBar(
+              backgroundColor: AppColors.cardLight,
+              elevation: 1,
+              title: Text(
+                'My Account',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // Edit Form
-              if (_isEditing) ...[
-                _buildEditField('Full Name', nameController),
-                _buildEditField('Email', emailController, enabled: false),
-                _buildEditField('Phone Number', phoneController),
-                _buildEditField('Date of Birth (DD/MM/YYYY)', dobController),
-                _buildGenderField(),
-                _buildEditField('Blood Group', bloodGroupController),
-                _buildEditField('Address', addressController, maxLines: 3),
-              ] else ...[
-                // View Profile
-                _buildProfileCard('Name', nameController.text.isNotEmpty ? nameController.text : '—'),
-                _buildProfileCard('Email', emailController.text),
-                _buildProfileCard('Phone', phoneController.text.isNotEmpty ? phoneController.text : '—'),
-                _buildProfileCard('Date of Birth', dobController.text.isNotEmpty ? dobController.text : '—'),
-                _buildProfileCard('Gender', selectedGender ?? '—'),
-                _buildProfileCard('Blood Group', bloodGroupController.text.isNotEmpty ? bloodGroupController.text : '—'),
-                _buildProfileCard('Address', addressController.text.isNotEmpty ? addressController.text : '—'),
-              ],
-            ],
+              centerTitle: false,
+              automaticallyImplyLeading: false,
+            ),
+            body: const Center(child: CircularProgressIndicator()),
+          ),
+          error: (err, st) => Scaffold(
+            backgroundColor: AppColors.surfaceLight,
+            appBar: AppBar(
+              backgroundColor: AppColors.cardLight,
+              elevation: 1,
+              title: Text(
+                'My Account',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              centerTitle: false,
+              automaticallyImplyLeading: false,
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                  const SizedBox(height: 12),
+                  Text('Error loading profile: $err'),
+                ],
+              ),
+            ),
           ),
         );
       },
@@ -220,7 +274,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<String>(
-        value: selectedGender,
+        initialValue: selectedGender,
         decoration: InputDecoration(
           labelText: 'Gender',
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

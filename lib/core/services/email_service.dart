@@ -154,4 +154,83 @@ class EmailService {
       return false;
     }
   }
+
+  /// DEBUGGING FUNCTION - Send a test email to verify EmailJS setup
+  /// Call this from anywhere in the app to test email functionality:
+  /// 
+  /// Usage in console: 
+  /// await EmailService.sendTestEmail('your.email@gmail.com');
+  /// 
+  /// Or in a button in your UI to trigger this function
+  static Future<bool> sendTestEmail(String recipientEmail) async {
+    print('🧪 TEST EMAIL: Starting test email to $recipientEmail');
+    print('📋 Using credentials:');
+    print('   Service ID: $serviceId');
+    print('   Template ID: $templateId');
+    print('   Public Key: ${publicKey.substring(0, 10)}...');
+    
+    try {
+      final testParams = {
+        'to_email': recipientEmail,
+        'to_name': 'Test User',
+        'subject': 'Medilink - Test Email',
+        'doctor_name': 'Dr. Test',
+        'doctor_specialization': 'General Practitioner',
+        'hospital_name': 'Test Hospital',
+        'appointment_date': '2026-04-20',
+        'appointment_time': '10:00 AM',
+        'patient_name': 'Test Patient',
+        'patient_email': recipientEmail,
+        'message': 'This is a test email to verify EmailJS is working correctly with Medilink. If you received this, EmailJS is properly configured!',
+      };
+
+      print('📤 Sending test email with parameters:');
+      testParams.forEach((key, value) {
+        if (key != 'to_email') {
+          print('   $key: $value');
+        }
+      });
+
+      await emailjs.send(
+        serviceId,
+        templateId,
+        testParams,
+        const emailjs.Options(
+          publicKey: publicKey,
+        ),
+      );
+
+      print('✅ TEST EMAIL: Sent successfully!');
+      print('⏱️  Check your inbox and spam folder within 5-10 seconds');
+      return true;
+    } catch (e) {
+      print('❌ TEST EMAIL: Failed with error');
+      print('Error type: ${e.runtimeType}');
+      print('Error message: $e');
+      
+      // Helpful debugging suggestions
+      if (e.toString().contains('invalid') || e.toString().contains('unauthorized')) {
+        print('💡 Hint: Check if Service ID, Template ID, or Public Key is correct');
+      } else if (e.toString().contains('not found') || e.toString().contains('404')) {
+        print('💡 Hint: Service or Template may not exist or be archived');
+      } else if (e.toString().contains('Gmail')) {
+        print('💡 Hint: Gmail account not connected in EmailJS dashboard');
+      }
+      
+      return false;
+    }
+  }
+
+  /// DEBUGGING FUNCTION - Get current EmailJS configuration
+  /// Prints sanitized credentials (hides sensitive parts)
+  static void printConfiguration() {
+    print('📋 Current EmailJS Configuration:');
+    print('========================================');
+    print('Service ID: ${serviceId.substring(0, 10)}...');
+    print('Template ID: ${templateId.substring(0, 10)}...');
+    print('Public Key: ${publicKey.substring(0, 10)}...');
+    print('========================================');
+    print('✅ If these are blank or show "service_", "template_", "Key..."');
+    print('   then credentials are properly set in email_service.dart');
+  }
 }

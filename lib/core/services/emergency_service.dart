@@ -1,21 +1,18 @@
-import 'dart:math';
 import 'package:geolocator/geolocator.dart';
 import 'package:medilink/features/home/models/hospital.dart';
 import 'package:medilink/features/home/models/slot.dart';
 
 class EmergencyService {
-  /// Calculate distance between two coordinates (in km)
+  /// Calculate distance between two coordinates (in km) - Using Haversine formula
   static double calculateDistance({
     required double lat1,
     required double lon1,
     required double lat2,
     required double lon2,
   }) {
-    const p = 0.017453292519943295; // Math.PI / 180
-    final a = 0.5 -
-        cos((lat2 - lat1) * p) / 2 +
-        cos((lon1 - lon2) * p) * cos(lat1 * p) * cos(lat2 * p) / 2;
-    return 12742 * asin(a.isNaN ? 0 : a); // 2 * R; R = 6371 km
+    // Use Geolocator's built-in distance calculation (most accurate)
+    final distanceInMeters = Geolocator.distanceBetween(lat1, lon1, lat2, lon2);
+    return distanceInMeters / 1000; // Convert meters to km
   }
 
   /// Find nearest hospital with available doctor

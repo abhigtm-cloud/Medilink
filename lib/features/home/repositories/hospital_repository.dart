@@ -1,5 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
+import 'package:medilink/core/services/cache_service.dart';
 import 'package:medilink/features/home/models/hospital.dart';
 
 /// Repository for hospital-related operations
@@ -54,37 +55,111 @@ class HospitalRepository {
       
       await ref.set(hospitalWithAdmin.toJson());
       
+      // Invalidate cache so fresh data is fetched next time
+      await CacheService.clearHospitals();
+      
       return hospitalWithAdmin.copyWith(id: ref.key);
     } catch (e) {
       throw Exception('Failed to create hospital: $e');
     }
   }
   
-  /// Get all hospitals
+  /// Get all hospitals (Cache-First Strategy for offline support)
   Future<List<Hospital>> getAllHospitals() async {
-    return _withRetry(() async {
-      final snapshot = await _database.child(_hospitalsPath).get();
-      
-      if (!snapshot.exists) {
-        return [];
+    // Try cache first - CRITICAL for offline mode
+    final cachedData = CacheService.getHospitals();
+    if (cachedData != null && cachedData.isNotEmpty) {
+      print('DEBUG: 📦 Using offline cache for hospitals (${cachedData.length} items)');
+      try {
+        return (cachedData)
+            .map((item) => Hospital.fromJson(
+                  Map<String, dynamic>.from(item as Map),
+                  docId: (item)['id'],
+                ))
+            .toList();
+      } catch (e) {
+        print('DEBUG: Error parsing cached hospitals: $e');
+        // Fall through to Firebase
       }
-      
-      final hospitals = <Hospital>[];
-      final data = snapshot.value as Map<dynamic, dynamic>? ?? {};
-      
-      data.forEach((key, value) {
-        if (value is Map<dynamic, dynamic>) {
-          hospitals.add(
-            Hospital.fromJson(
-              Map<String, dynamic>.from(value),
-              docId: key,
-            ),
-          );
+    }
+
+    // Cache miss or invalid, fetch from Firebase
+    print('DEBUG: 🔄 Fetching fresh hospitals from Firebase...');
+    try {
+      return _withRetry(() async {
+        try {
+          print('DEBUG: Reading from Firebase path: hospitals');
+          final snapshot = await _database.child(_hospitalsPath).get();
+          
+          print('DEBUG: ✅ Firebase response received');
+          
+          if (!snapshot.exists) {
+            print('DEBUG: ⚠️ No hospitals in Firebase');
+            // Return cached data as fallback if available
+            final fallbackCache = CacheService.getHospitals();
+            if (fallbackCache != null) {
+              return (fallbackCache)
+                  .map((item) => Hospital.fromJson(
+                        Map<String, dynamic>.from(item as Map),
+                        docId: (item)['id'],
+                      ))
+                  .toList();
+            }
+            return [];
+          }
+          
+          final hospitals = <Hospital>[];
+          final data = snapshot.value as Map<dynamic, dynamic>? ?? {};
+          final cacheData = <Map<String, dynamic>>[];
+          
+          print('DEBUG: Processing ${data.length} hospital records');
+          
+          data.forEach((key, value) {
+            if (value is Map<dynamic, dynamic>) {
+              try {
+                final hospital = Hospital.fromJson(
+                  Map<String, dynamic>.from(value),
+                  docId: key,
+                );
+                hospitals.add(hospital);
+                cacheData.add(hospital.toJson());
+                print('DEBUG: ✓ Parsed hospital: ${hospital.name}');
+              } catch (e) {
+                print('DEBUG: ✗ Error parsing hospital $key: $e');
+              }
+            }
+          });
+          
+          print('DEBUG: Successfully parsed ${hospitals.length} hospitals');
+          
+          // Store in cache for offline access
+          if (hospitals.isNotEmpty) {
+            await CacheService.setHospitals(cacheData);
+            print('DEBUG: ✅ Cached ${hospitals.length} hospitals');
+          }
+
+          return hospitals;
+        } catch (e, st) {
+          print('DEBUG: 🔥 Firebase read error: $e');
+          print('DEBUG: Stack trace: $st');
+          rethrow;
         }
-      });
-      
-      return hospitals;
-    }, maxRetries: _maxRetries, timeout: _queryTimeout);
+      }, maxRetries: _maxRetries, timeout: _queryTimeout);
+    } catch (e) {
+      print('DEBUG: Firebase failed, attempting offline cache fallback...');
+      // If Firebase completely fails, return cached data
+      final fallbackCache = CacheService.getHospitals();
+      if (fallbackCache != null && fallbackCache.isNotEmpty) {
+        print('DEBUG: ⚠️ Using offline cache as emergency fallback');
+        return (fallbackCache)
+            .map((item) => Hospital.fromJson(
+                  Map<String, dynamic>.from(item as Map),
+                  docId: (item)['id'],
+                ))
+            .toList();
+      }
+      throw Exception('No hospitals available (Firebase offline and cache empty): $e');
+    }
   }
   
   /// Get hospitals by admin ID
@@ -166,6 +241,9 @@ class HospitalRepository {
   Future<void> deleteHospital(String hospitalId) async {
     try {
       await _database.child(_hospitalsPath).child(hospitalId).remove();
+      
+      // Invalidate cache
+      await CacheService.clearHospitals();
     } catch (e) {
       throw Exception('Failed to delete hospital: $e');
     }

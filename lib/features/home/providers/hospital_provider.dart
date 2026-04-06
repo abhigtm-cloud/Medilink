@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medilink/features/home/models/hospital.dart';
 import 'package:medilink/features/home/repositories/hospital_repository.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
-import 'package:medilink/features/auth/models/app_user.dart';
 
 /// Provides a singleton instance of [HospitalRepository].
 final hospitalRepositoryProvider = Provider<HospitalRepository>((ref) {
@@ -108,9 +107,9 @@ class HospitalController extends StateNotifier<AsyncValue<Hospital?>> {
       await _repo.deleteHospital(hospitalId);
       
       // Invalidate cache and refresh auth state to ensure consistency
-      _read.refresh(authStateChangesProvider);
-      _read.refresh(getAdminHospitalsProvider);
-      _read.refresh(getAllHospitalsProvider);
+      await _read.refresh(authStateChangesProvider);
+      await _read.refresh(getAdminHospitalsProvider);
+      await _read.refresh(getAllHospitalsProvider);
       
       state = AsyncValue.data(null);
     } catch (e, st) {

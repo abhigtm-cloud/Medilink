@@ -8,7 +8,6 @@ import 'package:medilink/features/home/models/doctor.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
 import 'package:medilink/core/services/location_service.dart';
-import 'package:geolocator/geolocator.dart';
 
 class AddHospitalAndDoctorsScreen extends ConsumerStatefulWidget {
   const AddHospitalAndDoctorsScreen({super.key});

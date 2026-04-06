@@ -18,6 +18,28 @@ final getBookingsByUserProvider =
   return repo.getBookingsByUser(userId);
 });
 
+/// Returns pending bookings for a specific hospital
+final getPendingBookingsByHospitalProvider =
+    FutureProvider.family<List<Booking>, String>((ref, hospitalId) async {
+  final repo = ref.watch(bookingRepositoryProvider);
+  return repo.getPendingBookingsByHospital(hospitalId);
+});
+
+/// Returns all bookings for a specific hospital
+final getBookingsByHospitalProvider =
+    FutureProvider.family<List<Booking>, String>((ref, hospitalId) async {
+  final repo = ref.watch(bookingRepositoryProvider);
+  return repo.getBookingsByHospital(hospitalId);
+});
+
+/// Returns total bookings count for a specific doctor
+final getDoctorBookingsCountProvider =
+    FutureProvider.family<int, (String, String)>((ref, params) async {
+  final repo = ref.watch(bookingRepositoryProvider);
+  final (hospitalId, doctorId) = params;
+  return repo.getTotalBookingsCountForDoctor(hospitalId, doctorId);
+});
+
 /// StateNotifier for managing bookings
 class BookingController extends StateNotifier<AsyncValue<Booking?>> {
   BookingController(this._read) : super(const AsyncValue.data(null));
@@ -85,10 +107,31 @@ class BookingController extends StateNotifier<AsyncValue<Booking?>> {
     }
   }
   
+  
   Future<void> cancelBooking(String bookingId) async {
     state = const AsyncValue.loading();
     try {
       await _repo.cancelBooking(bookingId);
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> approveBooking(String bookingId, String hospitalId) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repo.approveBooking(bookingId, hospitalId);
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> rejectBooking(String bookingId, String hospitalId) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repo.rejectBooking(bookingId, hospitalId);
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

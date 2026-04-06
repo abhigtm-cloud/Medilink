@@ -19,7 +19,7 @@ class Booking {
     required this.date,
     required this.time,
     required this.createdAt,
-    this.status = BookingStatus.confirmed,
+    this.status = BookingStatus.pending,
   });
 
   Booking copyWith({
@@ -77,4 +77,4 @@ class Booking {
   }
 }
 
-enum BookingStatus { confirmed, cancelled, completed }
+enum BookingStatus { pending, confirmed, cancelled, completed }
