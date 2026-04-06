@@ -80,15 +80,11 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
       );
       
       state = AsyncValue.data(user);
-      print('DEBUG: AuthController.signIn - Sign-in successful for: $email');
-      print('DEBUG: AuthController.signIn - User role: ${user.role.displayName}');
       
       // Force refresh the auth state stream to ensure it emits the new user
-      print('DEBUG: AuthController.signIn - Triggering authStateChangesProvider refresh');
-      await _read.refresh(authStateChangesProvider);
+      _read.refresh(authStateChangesProvider);
       
     } catch (e, st) {
-      print('DEBUG: AuthController.signIn - Error for user $email: $e');
       state = AsyncValue.error(e, st);
       throw Exception(_formatFirebaseError(e));
     }
@@ -108,14 +104,11 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
         },
       );
       state = AsyncValue.data(user);
-      print('DEBUG: AuthController.register - Registration successful for: $email');
       
       // Force refresh the auth state stream
-      print('DEBUG: AuthController.register - Triggering authStateChangesProvider refresh');
-      await _read.refresh(authStateChangesProvider);
+      _read.refresh(authStateChangesProvider);
       
     } catch (e, st) {
-      print('DEBUG: AuthController.register - Error for user $email: $e');
       state = AsyncValue.error(e, st);
       throw Exception(_formatFirebaseError(e));
     }
@@ -128,8 +121,7 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
       state = const AsyncValue.data(null);
       
       // Force refresh the auth state stream to ensure logout completes
-      print('DEBUG: AuthController.signOut - Triggering authStateChangesProvider refresh');
-      await _read.refresh(authStateChangesProvider);
+      _read.refresh(authStateChangesProvider);
       
     } catch (e, st) {
       state = AsyncValue.error(e, st);

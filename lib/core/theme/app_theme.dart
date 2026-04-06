@@ -48,7 +48,7 @@ class AppTheme {
         surfaceContainerHighest: _surface,
         outline: _border,
         error: _error,
-        errorContainer: const Color(0xFFEF5350).withOpacity(0.1),
+        errorContainer: const Color(0xFFEF5350).withAlpha(26),
         onError: Colors.white,
       ),
       scaffoldBackgroundColor: _surface,
@@ -146,7 +146,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: _cardBg,
         elevation: 2,
-        shadowColor: _primary.withOpacity(0.08),
+        shadowColor: _primary.withAlpha(20),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(_borderRadius),
           side: const BorderSide(color: _border, width: 1),
@@ -161,7 +161,7 @@ class AppTheme {
         backgroundColor: _cardBg,
         foregroundColor: _textPrimary,
         surfaceTintColor: Colors.transparent,
-        shadowColor: _primary.withOpacity(0.05),
+        shadowColor: _primary.withAlpha(13),
         titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w700,
@@ -209,7 +209,7 @@ class AppTheme {
           backgroundColor: _primary,
           foregroundColor: Colors.white,
           elevation: 4,
-          shadowColor: _primary.withOpacity(0.3),
+          shadowColor: _primary.withAlpha(77),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(_smallBorderRadius),
@@ -267,9 +267,9 @@ class AppTheme {
       ),
       // Chip Theme
       chipTheme: ChipThemeData(
-        backgroundColor: _primaryLight.withOpacity(0.1),
+        backgroundColor: _primaryLight.withAlpha(26),
         selectedColor: _primary,
-        disabledColor: _border.withOpacity(0.5),
+        disabledColor: _border.withAlpha(127),
         labelStyle: const TextStyle(
           color: _textPrimary,
           fontSize: 12,
@@ -336,7 +336,7 @@ class AppTheme {
         surfaceContainerHighest: darkSurface,
         outline: darkBorder,
         error: _error,
-        errorContainer: _error.withOpacity(0.2),
+        errorContainer: _error.withAlpha(51),
       ),
       scaffoldBackgroundColor: darkSurface,
     );
@@ -384,7 +384,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: darkCard,
         elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.5),
+        shadowColor: Colors.black.withAlpha(127),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(_borderRadius),
           side: const BorderSide(color: darkBorder, width: 1),
@@ -397,7 +397,7 @@ class AppTheme {
         backgroundColor: darkCard,
         foregroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.black.withOpacity(0.3),
+        shadowColor: Colors.black.withAlpha(77),
         titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w700,
@@ -434,7 +434,7 @@ class AppTheme {
           backgroundColor: _primary,
           foregroundColor: Colors.white,
           elevation: 4,
-          shadowColor: _primary.withOpacity(0.4),
+          shadowColor: _primary.withAlpha(102),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(_smallBorderRadius),
@@ -460,9 +460,9 @@ class AppTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: _primary.withOpacity(0.1),
+        backgroundColor: _primary.withAlpha(26),
         selectedColor: _primary,
-        disabledColor: darkBorder.withOpacity(0.5),
+        disabledColor: darkBorder.withAlpha(127),
         labelStyle: const TextStyle(
           color: Colors.white,
           fontSize: 12,
@@ -486,12 +486,12 @@ class AppTheme {
   /// Professional shadow suitable for elevated components
   static List<BoxShadow> get elevatedShadow => [
     BoxShadow(
-      color: _primary.withOpacity(0.08),
+      color: _primary.withAlpha(20),
       blurRadius: 16,
       offset: const Offset(0, 4),
     ),
     BoxShadow(
-      color: _primary.withOpacity(0.04),
+      color: _primary.withAlpha(10),
       blurRadius: 8,
       offset: const Offset(0, 2),
     ),
@@ -500,7 +500,7 @@ class AppTheme {
   /// Soft shadow for cards
   static List<BoxShadow> get cardShadow => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.06),
+      color: Colors.black.withAlpha(15),
       blurRadius: 12,
       offset: const Offset(0, 2),
     ),
@@ -524,6 +524,6 @@ class AppTheme {
   static LinearGradient get subtleGradient => LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [_surface, _surface.withOpacity(0.8)],
+    colors: [_surface, _surface.withAlpha(204)],
   );
 }

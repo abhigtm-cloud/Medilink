@@ -26,7 +26,7 @@ class AppUIComponents {
           boxShadow: shadows ??
               [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Colors.black.withAlpha(15),
                   blurRadius: 12,
                   offset: const Offset(0, 2),
                 ),
@@ -54,7 +54,7 @@ class AppUIComponents {
           borderRadius: BorderRadius.circular(borderRadius),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0066CC).withOpacity(0.2),
+              color: const Color(0xFF0066CC).withAlpha(51),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -269,7 +269,7 @@ class AppUIComponents {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: backgroundColor.withOpacity(0.1),
+        color: backgroundColor.withAlpha(26),
         border: Border.all(color: backgroundColor, width: 1.5),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -373,7 +373,7 @@ class AppUIComponents {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: backgroundColor.withOpacity(0.2),
+        color: backgroundColor.withAlpha(51),
         border: Border.all(color: backgroundColor, width: 1),
         borderRadius: BorderRadius.circular(20),
       ),
