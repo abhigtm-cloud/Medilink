@@ -27,7 +27,7 @@ class UserProfileRepository {
   /// Update user profile in Firebase
   Future<void> updateUserProfile(AppUser user) async {
     try {
-      await _usersRef.child(user.uid).set(user.toJson());
+      await _usersRef.child(user.uid).update(user.toJson());
     } catch (e) {
       print('DEBUG: Error updating user profile: $e');
       throw Exception('Failed to update profile: $e');

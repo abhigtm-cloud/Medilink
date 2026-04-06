@@ -332,7 +332,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         address: addressController.text.trim(),
       );
 
+      // ✅ AWAIT the profile update to complete
       await _profileRepo.updateUserProfile(updatedUser);
+
+      // ✅ INVALIDATE Riverpod cache to refresh UI with new data
+      ref.invalidate(getUserProfileProvider(authState.uid));
 
       if (mounted) {
         setState(() => _isEditing = false);

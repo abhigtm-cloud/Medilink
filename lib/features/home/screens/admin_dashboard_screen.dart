@@ -694,20 +694,23 @@ class _PendingBookingCard extends ConsumerWidget {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    ref
+                  onPressed: () async {
+                    // ✅ AWAIT the approval to complete first
+                    await ref
                         .read(bookingControllerProvider.notifier)
                         .approveBooking(booking.id!, hospital.id!);
-                    // Refresh the pending bookings list
+                    // ✅ THEN refresh the pending bookings list
                     ref.refresh(
                       getPendingBookingsByHospitalProvider(hospital.id!),
                     );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('✅ Booking approved'),
-                        backgroundColor: AppColors.success,
-                      ),
-                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('✅ Booking approved'),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                    }
                   },
                   icon: const Icon(Icons.check_circle, size: 18),
                   label: const Text('Approve'),
@@ -722,20 +725,23 @@ class _PendingBookingCard extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    ref
+                  onPressed: () async {
+                    // ✅ AWAIT the rejection to complete first
+                    await ref
                         .read(bookingControllerProvider.notifier)
                         .rejectBooking(booking.id!, hospital.id!);
-                    // Refresh the pending bookings list
+                    // ✅ THEN refresh the pending bookings list
                     ref.refresh(
                       getPendingBookingsByHospitalProvider(hospital.id!),
                     );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('❌ Booking rejected'),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('❌ Booking rejected'),
+                          backgroundColor: AppColors.error,
+                        ),
+                      );
+                    }
                   },
                   icon: const Icon(Icons.close_rounded, size: 18),
                   label: const Text('Reject'),
