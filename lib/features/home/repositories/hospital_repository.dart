@@ -21,7 +21,6 @@ class HospitalRepository {
     while (attempts < maxRetries) {
       try {
         attempts++;
-        print('DEBUG: Firebase query attempt $attempts/$maxRetries');
         
         final result = await operation().timeout(
           timeout,
@@ -30,10 +29,8 @@ class HospitalRepository {
           },
         );
         
-        print('DEBUG: Firebase query successful on attempt $attempts');
         return result;
       } catch (e) {
-        print('DEBUG: Firebase query failed on attempt $attempts: $e');
         
         if (attempts >= maxRetries) {
           throw Exception('Failed after $maxRetries attempts: $e');

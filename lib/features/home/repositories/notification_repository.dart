@@ -85,7 +85,6 @@ class NotificationRepository {
       final notifications = await getNotificationsForUser(userId);
       return notifications.where((n) => !n.isRead).length;
     } catch (e) {
-      print('DEBUG: Error getting unread count: $e');
       return 0;
     }
   }

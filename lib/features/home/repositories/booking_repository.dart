@@ -81,7 +81,6 @@ class BookingRepository {
       
       await notifRef.set(notification.toJson());
     } catch (e) {
-      print('DEBUG: Error creating admin notification: $e');
       // Don't throw - booking should succeed even if notification fails
     }
   }

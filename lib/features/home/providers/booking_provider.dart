@@ -84,7 +84,6 @@ class BookingController extends StateNotifier<AsyncValue<Booking?>> {
 
       // Don't send if missing critical data
       if (doctor?.email == null) {
-        print('DEBUG: Doctor email not available, skipping email');
         return;
       }
 
@@ -99,10 +98,7 @@ class BookingController extends StateNotifier<AsyncValue<Booking?>> {
         appointmentTime: booking.time,
         specialization: doctor.specialization,
       );
-
-      print('DEBUG: Booking confirmation email sent successfully');
     } catch (e) {
-      print('DEBUG: Error sending booking confirmation email: $e');
       // Don't fail the booking if email fails
     }
   }

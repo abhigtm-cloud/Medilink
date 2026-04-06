@@ -56,7 +56,6 @@ class DoctorController extends StateNotifier<AsyncValue<Doctor?>> {
       _read.invalidate(getDoctorsByHospitalProvider(doctor.hospitalId));
 
     } catch (e, st) {
-      print('DEBUG: Error in createDoctor: $e');
       state = AsyncValue.error(e, st);
     }
   }

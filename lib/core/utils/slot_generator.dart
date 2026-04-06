@@ -51,7 +51,7 @@ class SlotGenerator {
         currentTime = slotEnd;
       }
     } catch (e) {
-      print('Error generating slots: $e');
+      // Error generating slots
     }
     
     return slots;
@@ -68,7 +68,6 @@ class SlotGenerator {
       
       return DateTime(2024, 1, 1, hours, minutes);
     } catch (e) {
-      print('Error parsing time: $e');
       return null;
     }
   }

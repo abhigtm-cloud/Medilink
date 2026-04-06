@@ -45,20 +45,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     
-    print('DEBUG: RegisterScreen - Attempting sign-up with email: $email');
-    
     try {
       // Call register - this will update Firebase Auth
       await ref.read(authControllerProvider.notifier).register(email, password);
-      print('DEBUG: RegisterScreen - Sign-up completed');
       
       // Show loading indicator while Firebase auth state updates
       // main.dart will handle navigation automatically
       if (mounted) {
-        print('DEBUG: RegisterScreen - Waiting for Firebase to propagate auth state');
       }
     } catch (e) {
-      print('DEBUG: RegisterScreen - Sign-up error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Sign up failed: $e')),

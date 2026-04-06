@@ -105,10 +105,8 @@ class DoctorRepository {
           
           await ref.set(slot.toJson());
         }
-        print('DEBUG: Generated ${slots.length} slots for doctor ${doctor.name}');
       }
     } catch (e) {
-      print('DEBUG: Error generating slots: $e');
       // Don't throw error here - doctor creation should succeed even if slot generation fails
     }
   }
@@ -118,7 +116,6 @@ class DoctorRepository {
     // Try cache first - supports offline mode
     final cachedDoctors = CacheService.getDoctorsByHospital(hospitalId);
     if (cachedDoctors != null && cachedDoctors.isNotEmpty) {
-      print('DEBUG: 📦 Using offline cache for doctors in $hospitalId');
       try {
         return (cachedDoctors)
             .map((item) => Doctor.fromJson(
@@ -127,7 +124,7 @@ class DoctorRepository {
                 ))
             .toList();
       } catch (e) {
-        print('DEBUG: Error parsing cached doctors: $e');
+        return [];
         // Fall through to Firebase
       }
     }
