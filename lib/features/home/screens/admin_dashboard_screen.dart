@@ -378,7 +378,7 @@ class HospitalCard extends ConsumerWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppColors.primaryLight.withOpacity(0.15),
+              color: AppColors.primaryLight.withAlpha(38),
               borderRadius: BorderRadius.circular(12),
             ),
             child: hospital.photoUrl != null
@@ -623,7 +623,7 @@ class _PendingBookingCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.info.withOpacity(0.3), width: 1),
+        border: Border.all(color: AppColors.info.withAlpha(76), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -674,7 +674,7 @@ class _PendingBookingCard extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.1),
+                  color: AppColors.warning.withAlpha(26),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(

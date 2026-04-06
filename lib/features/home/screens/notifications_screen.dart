@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medilink/core/theme/app_colors.dart';
+import 'package:medilink/core/theme/app_theme.dart';
 import 'package:medilink/features/home/models/notification.dart' as models;
 import 'package:medilink/features/home/providers/notification_provider.dart';
 import 'package:medilink/features/home/repositories/notification_repository.dart';
@@ -99,7 +100,7 @@ class NotificationsScreen extends ConsumerWidget {
     );
   }
 
-  void _markAsRead(
+  Future<void> _markAsRead(
     BuildContext context,
     WidgetRef ref,
     models.Notification notification,
@@ -111,7 +112,7 @@ class NotificationsScreen extends ConsumerWidget {
       if (notification.id != null) {
         await repo.markAsRead(notification.userId, notification.id!);
         // Refresh notifications
-        await ref.refresh(getUserNotificationsProvider);
+        ref.refresh(getUserNotificationsProvider);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -142,7 +143,7 @@ class _NotificationCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: notification.isRead ? AppColors.cardLight : AppColors.primary.withOpacity(0.1),
+          color: notification.isRead ? AppColors.cardLight : AppColors.primary.withAlpha(26),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: notification.isRead ? AppColors.borderLight : AppColors.primary,
