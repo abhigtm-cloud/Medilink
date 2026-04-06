@@ -33,7 +33,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final ref = this.ref;
     final authStream = ref.watch(authStateChangesProvider);
     final hospitalsAsync = ref.watch(getAdminHospitalsProvider);
 
