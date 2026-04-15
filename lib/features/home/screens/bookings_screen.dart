@@ -6,7 +6,6 @@ import 'package:medilink/features/auth/providers/auth_providers.dart';
 import 'package:medilink/features/home/providers/booking_provider.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
-import 'package:medilink/features/home/models/booking.dart';
 
 /// Bookings Screen showing user's appointment history and upcoming bookings.
 class BookingsScreen extends ConsumerWidget {

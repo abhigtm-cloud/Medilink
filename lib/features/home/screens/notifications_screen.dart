@@ -4,7 +4,6 @@ import 'package:medilink/core/theme/app_colors.dart';
 import 'package:medilink/core/theme/app_theme.dart';
 import 'package:medilink/features/home/models/notification.dart' as models;
 import 'package:medilink/features/home/providers/notification_provider.dart';
-import 'package:medilink/features/home/repositories/notification_repository.dart';
 
 /// Notifications Screen showing all notifications for the user
 class NotificationsScreen extends ConsumerWidget {
@@ -112,7 +111,7 @@ class NotificationsScreen extends ConsumerWidget {
       if (notification.id != null) {
         await repo.markAsRead(notification.userId, notification.id!);
         // Refresh notifications
-        ref.refresh(getUserNotificationsProvider);
+        ref.invalidate(getUserNotificationsProvider);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -82,7 +82,7 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
       state = AsyncValue.data(user);
       
       // Force refresh the auth state stream to ensure it emits the new user
-      _read.refresh(authStateChangesProvider);
+      _read.invalidate(authStateChangesProvider);
       
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -106,7 +106,7 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
       state = AsyncValue.data(user);
       
       // Force refresh the auth state stream
-      _read.refresh(authStateChangesProvider);
+      _read.invalidate(authStateChangesProvider);
       
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -121,7 +121,7 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
       state = const AsyncValue.data(null);
       
       // Force refresh the auth state stream to ensure logout completes
-      _read.refresh(authStateChangesProvider);
+      _read.invalidate(authStateChangesProvider);
       
     } catch (e, st) {
       state = AsyncValue.error(e, st);

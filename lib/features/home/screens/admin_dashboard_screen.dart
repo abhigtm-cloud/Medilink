@@ -6,6 +6,7 @@ import 'package:medilink/core/theme/app_theme.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
 import 'package:medilink/features/home/providers/booking_provider.dart';
+import 'package:medilink/features/home/providers/doctor_provider.dart';
 import 'package:medilink/features/home/screens/add_hospital_screen.dart';
 import 'package:medilink/features/home/screens/hospital_detail_screen.dart';
 
@@ -237,7 +238,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
                       onPressed: () {
-                        ref.refresh(getAdminHospitalsProvider);
+                        ref.invalidate(getAdminHospitalsProvider);
                       },
                       icon: const Icon(Icons.refresh),
                       label: const Text('Retry'),
@@ -480,7 +481,6 @@ class _PendingBookingsHospitalSection extends ConsumerWidget {
   final hospital;
 
   const _PendingBookingsHospitalSection({
-    super.key,
     required this.hospital,
   });
 
@@ -606,18 +606,29 @@ class _PendingBookingsHospitalSection extends ConsumerWidget {
   }
 }
 
-class _PendingBookingCard extends ConsumerWidget {
+class _PendingBookingCard extends ConsumerStatefulWidget {
   final booking;
   final hospital;
 
   const _PendingBookingCard({
-    super.key,
     required this.booking,
     required this.hospital,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PendingBookingCard> createState() => _PendingBookingCardState();
+}
+
+class _PendingBookingCardState extends ConsumerState<_PendingBookingCard> {
+  bool _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // Fetch doctor details to get doctor name
+    final doctorAsync = ref.watch(
+      getDoctorByIdProvider((widget.hospital.id!, widget.booking.doctorId)),
+    );
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -636,7 +647,7 @@ class _PendingBookingCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Booking ID: ${booking.id?.substring(0, 8) ?? 'N/A'}',
+                      'Booking ID: ${widget.booking.id?.substring(0, 8) ?? 'N/A'}',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -644,16 +655,32 @@ class _PendingBookingCard extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      'Doctor: ${booking.doctorName ?? 'Loading...'}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                    doctorAsync.when(
+                      data: (doctor) => Text(
+                        'Doctor: ${doctor?.name ?? 'Unknown'}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      loading: () => const SizedBox(
+                        height: 16,
+                        child: Text(
+                          'Doctor: Loading...',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                      ),
+                      error: (_, __) => const Text(
+                        'Doctor: Error loading',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color.fromARGB(255, 244, 67, 54),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Patient Email: ${booking.userId}',
+                      'Patient Email: ${widget.booking.userId}',
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondaryLight,
@@ -663,7 +690,7 @@ class _PendingBookingCard extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '📅 ${booking.date} • 🕐 ${booking.time}',
+                      '📅 ${widget.booking.date} • 🕐 ${widget.booking.time}',
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondaryLight,
@@ -694,28 +721,65 @@ class _PendingBookingCard extends ConsumerWidget {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () async {
-                    // ✅ AWAIT the approval to complete first
-                    await ref
-                        .read(bookingControllerProvider.notifier)
-                        .approveBooking(booking.id!, hospital.id!);
-                    // ✅ THEN refresh the pending bookings list
-                    ref.refresh(
-                      getPendingBookingsByHospitalProvider(hospital.id!),
-                    );
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('✅ Booking approved'),
-                          backgroundColor: AppColors.success,
-                        ),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.check_circle, size: 18),
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          setState(() => _isLoading = true);
+                          try {
+                            // Approve the booking
+                            await ref
+                                .read(bookingControllerProvider.notifier)
+                                .approveBooking(
+                                  widget.booking.id!,
+                                  widget.hospital.id!,
+                                );
+                            // Refresh the list
+                            if (mounted) {
+                              ref.invalidate(
+                                getPendingBookingsByHospitalProvider(
+                                    widget.hospital.id!),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('✅ Booking approved'),
+                                  backgroundColor: AppColors.success,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('❌ Error: $e'),
+                                  backgroundColor: AppColors.error,
+                                  duration: const Duration(seconds: 3),
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isLoading = false);
+                            }
+                          }
+                        },
+                  icon: _isLoading
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.success.withAlpha(200),
+                            ),
+                          ),
+                        )
+                      : const Icon(Icons.check_circle, size: 18),
                   label: const Text('Approve'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
+                    disabledBackgroundColor:
+                        AppColors.success.withAlpha(128),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(6),
                     ),
@@ -725,29 +789,57 @@ class _PendingBookingCard extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () async {
-                    // ✅ AWAIT the rejection to complete first
-                    await ref
-                        .read(bookingControllerProvider.notifier)
-                        .rejectBooking(booking.id!, hospital.id!);
-                    // ✅ THEN refresh the pending bookings list
-                    ref.refresh(
-                      getPendingBookingsByHospitalProvider(hospital.id!),
-                    );
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('❌ Booking rejected'),
-                          backgroundColor: AppColors.error,
-                        ),
-                      );
-                    }
-                  },
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          setState(() => _isLoading = true);
+                          try {
+                            // Reject the booking
+                            await ref
+                                .read(bookingControllerProvider.notifier)
+                                .rejectBooking(
+                                  widget.booking.id!,
+                                  widget.hospital.id!,
+                                );
+                            // Refresh the list
+                            if (mounted) {
+                              ref.invalidate(
+                                getPendingBookingsByHospitalProvider(
+                                    widget.hospital.id!),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('❌ Booking rejected'),
+                                  backgroundColor: AppColors.error,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('❌ Error: $e'),
+                                  backgroundColor: AppColors.error,
+                                  duration: const Duration(seconds: 3),
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isLoading = false);
+                            }
+                          }
+                        },
                   icon: const Icon(Icons.close_rounded, size: 18),
                   label: const Text('Reject'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
-                    side: BorderSide(color: AppColors.error),
+                    side: BorderSide(
+                      color: _isLoading
+                          ? AppColors.error.withAlpha(128)
+                          : AppColors.error,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(6),
                     ),
