@@ -10,7 +10,9 @@ import 'package:medilink/features/home/screens/search_screen.dart';
 import 'package:medilink/features/home/screens/bookings_screen.dart';
 import 'package:medilink/features/home/screens/account_screen.dart';
 import 'package:medilink/features/home/screens/hospital_map_screen.dart';
-import 'package:medilink/features/home/screens/emergency_hospitals_screen.dart';
+import 'package:medilink/features/emergency/presentation/widgets/sos_button.dart';
+import 'package:medilink/features/emergency/presentation/providers/emergency_providers.dart';
+import 'package:medilink/features/emergency/presentation/screens/emergency_tracking_screen.dart';
 import 'package:medilink/features/auth/screens/login_screen.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
@@ -34,6 +36,22 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
   void initState() {
     super.initState();
     _loadCurrentLocation();
+    _resumeActiveEmergencyIfAny();
+  }
+
+  /// If the app was killed/reopened mid-emergency, jump straight back into
+  /// tracking instead of the home tab. See architecture doc §8.
+  Future<void> _resumeActiveEmergencyIfAny() async {
+    final requestId =
+        await ref.read(emergencyRepositoryProvider).getCachedActiveRequestId();
+    if (requestId == null || !mounted) return;
+    ref.read(activeEmergencyIdProvider.notifier).state = requestId;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EmergencyTrackingScreen(requestId: requestId),
+      ),
+    );
   }
 
   Future<void> _loadCurrentLocation() async {
@@ -96,28 +114,8 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
       appBar: appBar,
       drawer: drawer,
       body: body,
-      floatingActionButton: _selectedBottomNav == 0 ? _buildEmergencyButton() : null,
+      floatingActionButton: _selectedBottomNav == 0 ? const SosButton() : null,
       bottomNavigationBar: _buildBottomNavigation(),
-    );
-  }
-
-  Widget _buildEmergencyButton() {
-    return FloatingActionButton.extended(
-      onPressed: _handleEmergency,
-      backgroundColor: Colors.red,
-      foregroundColor: Colors.white,
-      icon: const Icon(Icons.emergency),
-      label: const Text('EMERGENCY'),
-    );
-  }
-
-  Future<void> _handleEmergency() async {
-    // Navigate to emergency hospitals list (showing nearest first)
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const EmergencyHospitalsScreen(),
-      ),
     );
   }
 

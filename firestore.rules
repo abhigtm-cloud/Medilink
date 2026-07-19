@@ -1,9 +1,10 @@
 rules_version = '2';
 
-// Covers only the collections built so far (RBAC foundation + hospital
-// directory sync, step 1 of docs/EMERGENCY_PLATFORM_ARCHITECTURE.md §23).
-// Rules for emergency_requests, ambulances, pharmacy, etc. get added in the
-// same change that introduces those collections' Cloud Functions/UI.
+// Covers only the collections built so far: RBAC foundation, hospital
+// directory sync, and Feature 1 (Emergency SOS) — steps 1-2 of
+// docs/EMERGENCY_PLATFORM_ARCHITECTURE.md §23. Rules for ambulances,
+// pharmacy, etc. get added in the same change that introduces those
+// collections' Cloud Functions/UI.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -42,6 +43,39 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow update: if belongsToHospital(hospitalId);
       allow create, delete: if false; // Cloud Function only
+
+      // Lightweight pointer docs the Command Center's "Incoming Requests"
+      // list listens to, so it doesn't need a compound query across all of
+      // emergency_requests. Written only by triggerEmergencySOS/cancelEmergency.
+      match /queue/{requestId} {
+        allow read: if belongsToHospital(hospitalId);
+        allow write: if false;
+      }
+    }
+
+    // ---------- emergency requests (Feature 1 — Emergency SOS) ----------
+    match /emergency_requests/{requestId} {
+      allow read: if isSignedIn() && (
+                     resource.data.patientUid == request.auth.uid ||
+                     belongsToHospital(resource.data.selectedHospitalId)
+                   );
+      allow create: if false; // triggerEmergencySOS Callable Function only
+      // status transitions (including cancellation) are Cloud-Function-only;
+      // the patient may update ONLY their own live location fields directly
+      allow update: if isOwner(resource.data.patientUid)
+                     && request.resource.data.diff(resource.data).affectedKeys()
+                          .hasOnly(['patientLocation', 'patientLocationUpdatedAt']);
+      allow update: if belongsToHospital(resource.data.selectedHospitalId)
+                     && request.resource.data.patientUid == resource.data.patientUid;
+      allow delete: if false;
+
+      match /timeline/{eventId} {
+        allow read: if isSignedIn() && (
+                       get(/databases/$(database)/documents/emergency_requests/$(requestId)).data.patientUid == request.auth.uid ||
+                       belongsToHospital(get(/databases/$(database)/documents/emergency_requests/$(requestId)).data.selectedHospitalId)
+                     );
+        allow write: if false; // Cloud Function only — append-only audit trail
+      }
     }
   }
 }
