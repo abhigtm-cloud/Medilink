@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:medilink/core/services/rbac_service.dart';
 import 'package:medilink/features/auth/models/app_user.dart';
 import 'package:medilink/features/auth/repositories/auth_repository.dart';
 import 'package:medilink/features/auth/repositories/user_profile_repository.dart';
@@ -43,6 +44,28 @@ final getUserProfileProvider =
     FutureProvider.family<AppUser?, String>((ref, uid) async {
   final repo = ref.watch(userProfileRepositoryProvider);
   return repo.getUserProfile(uid);
+});
+
+/// Provides a singleton instance of [RbacService].
+final rbacServiceProvider = Provider<RbacService>((ref) => RbacService());
+
+/// The signed-in user's server-verified role + hospital assignment, sourced
+/// from Firebase custom claims (see docs/EMERGENCY_PLATFORM_ARCHITECTURE.md §3).
+/// Re-reads claims (with a forced token refresh) whenever [authStateChangesProvider]
+/// emits a new user, so it's up to date right after sign-in/sign-out.
+///
+/// If a hospital_admin assigns this user a staff role *during* their
+/// session, call `ref.read(rbacServiceProvider).refreshClaims()` followed by
+/// `ref.invalidate(currentAppRoleProvider)` to pick it up immediately.
+final currentAppRoleProvider = FutureProvider<AppRole>((ref) async {
+  final rbac = ref.watch(rbacServiceProvider);
+  final user = ref.watch(authStateChangesProvider).valueOrNull;
+
+  if (user == null) {
+    rbac.reset();
+    return AppRole.unknown;
+  }
+  return rbac.refreshClaims();
 });
 
 /// A synchronous representation of the current [AppUser] state.

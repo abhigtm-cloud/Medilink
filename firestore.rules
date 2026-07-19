@@ -1,0 +1,47 @@
+rules_version = '2';
+
+// Covers only the collections built so far (RBAC foundation + hospital
+// directory sync, step 1 of docs/EMERGENCY_PLATFORM_ARCHITECTURE.md §23).
+// Rules for emergency_requests, ambulances, pharmacy, etc. get added in the
+// same change that introduces those collections' Cloud Functions/UI.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function isSignedIn() { return request.auth != null; }
+    function role() { return request.auth.token.role; }
+    function myHospitalId() { return request.auth.token.hospitalId; }
+    function isHospitalAdmin() { return isSignedIn() && role() == 'hospital_admin'; }
+    function isDoctor() { return isSignedIn() && role() == 'doctor'; }
+    function isAmbulanceDriver() { return isSignedIn() && role() == 'ambulance_driver'; }
+    function isPharmacy() { return isSignedIn() && role() == 'pharmacy'; }
+    function isEmergencyStaff() { return isSignedIn() && role() == 'emergency_staff'; }
+    function isHospitalStaff() {
+      return isHospitalAdmin() || isDoctor() || isAmbulanceDriver() || isPharmacy() || isEmergencyStaff();
+    }
+    function belongsToHospital(hospitalId) {
+      return isHospitalStaff() && myHospitalId() == hospitalId;
+    }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+
+    // ---------- RBAC source ----------
+    match /user_roles/{uid} {
+      allow read: if isOwner(uid) || isHospitalAdmin();
+      // only a hospital_admin may write staff roles for THEIR hospital; a user can never self-assign a staff role
+      allow create, update: if isHospitalAdmin() && request.resource.data.hospitalId == myHospitalId()
+                              && request.resource.data.role in ['doctor','ambulance_driver','pharmacy','emergency_staff'];
+      allow delete: if false; // off-boarding sets isActive: false instead
+    }
+
+    // ---------- hospital directory / status ----------
+    match /hospital_directory/{hospitalId} {
+      allow read: if isSignedIn();
+      allow write: if false; // mirrorHospitalToFirestore Cloud Function only (Admin SDK)
+    }
+    match /hospital_status/{hospitalId} {
+      allow read: if isSignedIn();
+      allow update: if belongsToHospital(hospitalId);
+      allow create, delete: if false; // Cloud Function only
+    }
+  }
+}
