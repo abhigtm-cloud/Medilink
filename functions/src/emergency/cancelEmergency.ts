@@ -1,6 +1,7 @@
 import * as functionsV1 from "firebase-functions/v1";
 import { admin, db } from "../admin";
 import { appendTimeline } from "./timeline";
+import { releaseQueueSlot } from "./queue";
 
 const CANCELLABLE_STATUSES = ["requested", "searchingHospital", "hospitalAssigned"];
 
@@ -49,11 +50,7 @@ export const cancelEmergency = functionsV1.https.onCall(async (data, context) =>
   });
 
   if (emergency.selectedHospitalId) {
-    const hospitalId = emergency.selectedHospitalId as string;
-    await db.doc(`hospital_status/${hospitalId}/queue/${requestId}`).delete().catch(() => undefined);
-    await db.doc(`hospital_status/${hospitalId}`).update({
-      activeEmergencyCount: admin.firestore.FieldValue.increment(-1),
-    }).catch(() => undefined);
+    await releaseQueueSlot(emergency.selectedHospitalId as string, requestId);
   }
 
   await appendTimeline(requestId, "cancelled", "Cancelled by patient", "patient", { reason });

@@ -4,3 +4,9 @@ export { mirrorHospitalToFirestore } from "./hospital/mirrorHospitalToFirestore"
 export { seedHospitalStatus } from "./hospital/seedHospitalStatus";
 export { triggerEmergencySOS } from "./emergency/triggerEmergencySOS";
 export { cancelEmergency } from "./emergency/cancelEmergency";
+export { acceptEmergency } from "./emergency/acceptEmergency";
+export { rejectEmergency } from "./emergency/rejectEmergency";
+export { assignDoctor } from "./emergency/assignDoctor";
+export { sendInstruction } from "./emergency/sendInstruction";
+export { markArrived } from "./emergency/markArrived";
+export { closeEmergency } from "./emergency/closeEmergency";

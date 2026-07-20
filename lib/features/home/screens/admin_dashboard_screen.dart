@@ -9,6 +9,7 @@ import 'package:medilink/features/home/providers/booking_provider.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
 import 'package:medilink/features/home/screens/add_hospital_screen.dart';
 import 'package:medilink/features/home/screens/hospital_detail_screen.dart';
+import 'package:medilink/features/command_center/presentation/screens/command_center_dashboard_screen.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -67,6 +68,16 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.emergency, color: AppColors.error),
+            tooltip: 'Emergency Command Center',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CommandCenterDashboardScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
             tooltip: 'Delete Account',

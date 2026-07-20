@@ -6,6 +6,31 @@ interface RtdbHospital {
   address?: string;
   latitude?: number;
   longitude?: number;
+  adminId?: string;
+}
+
+/**
+ * Links the hospital's creator to it once it exists, so their
+ * `hospital_admin` custom claim (set with `hospitalId: null` at signup —
+ * see onUserCreate.ts, since they haven't created a hospital yet at that
+ * point) picks up the real `hospitalId`. Idempotent: only touches the doc
+ * the first time (`hospitalId` still null), so it never clobbers an admin
+ * who's since been reassigned.
+ */
+async function linkHospitalAdmin(hospitalId: string, adminId: string | undefined): Promise<void> {
+  if (!adminId) return;
+  const roleRef = db.doc(`user_roles/${adminId}`);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(roleRef);
+    if (!snap.exists) return;
+    const data = snap.data()!;
+    if (data.role === "hospital_admin" && !data.hospitalId) {
+      tx.update(roleRef, {
+        hospitalId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+  });
 }
 
 /**
@@ -27,6 +52,8 @@ export const mirrorHospitalToFirestore = functionsV1.database
     }
 
     const after = change.after.val() as RtdbHospital;
+    await linkHospitalAdmin(hospitalId, after.adminId);
+
     if (
       !after.name ||
       !after.address ||

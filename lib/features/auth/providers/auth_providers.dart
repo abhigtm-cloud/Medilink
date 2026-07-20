@@ -68,6 +68,16 @@ final currentAppRoleProvider = FutureProvider<AppRole>((ref) async {
   return rbac.refreshClaims();
 });
 
+/// The signed-in user's hospital assignment (null for patients, or for
+/// staff not yet linked to a hospital — see linkHospitalAdmin() in
+/// functions/src/hospital/mirrorHospitalToFirestore.ts). Depends on
+/// [currentAppRoleProvider] having resolved first, since that's what
+/// populates [RbacService.currentHospitalId].
+final currentHospitalIdProvider = FutureProvider<String?>((ref) async {
+  await ref.watch(currentAppRoleProvider.future);
+  return ref.watch(rbacServiceProvider).currentHospitalId;
+});
+
 /// A synchronous representation of the current [AppUser] state.
 final authStateChangesProvider = StreamProvider<AppUser?>((ref) {
   final repo = ref.watch(authRepositoryProvider);

@@ -16,6 +16,8 @@ class EmergencyRequestModel extends EmergencyRequest {
     super.assignedAmbulanceId,
     super.cancelReason,
     super.rejectReason,
+    super.patientSnapshot,
+    super.staffInstructions,
     super.createdAt,
     super.acceptedAt,
     super.arrivedAt,
@@ -28,6 +30,13 @@ class EmergencyRequestModel extends EmergencyRequest {
     final location = data['patientLocation'] as GeoPoint?;
 
     DateTime? ts(String key) => (data[key] as Timestamp?)?.toDate();
+
+    final snapshotData = data['patientSnapshot'] as Map<String, dynamic>?;
+    final instructions = (data['staffInstructions'] as List?)
+            ?.map((e) => (e as Map)['text'] as String? ?? '')
+            .where((text) => text.isNotEmpty)
+            .toList() ??
+        const [];
 
     return EmergencyRequestModel(
       id: doc.id,
@@ -49,6 +58,21 @@ class EmergencyRequestModel extends EmergencyRequest {
       assignedAmbulanceId: data['assignedAmbulanceId'] as String?,
       cancelReason: data['cancelReason'] as String?,
       rejectReason: data['rejectReason'] as String?,
+      patientSnapshot: snapshotData == null
+          ? null
+          : PatientSnapshot(
+              name: snapshotData['name'] as String? ?? 'Unknown Patient',
+              phoneNumber: snapshotData['phoneNumber'] as String?,
+              bloodGroup: snapshotData['bloodGroup'] as String?,
+              age: (snapshotData['age'] as num?)?.toInt(),
+              medicalConditions:
+                  (snapshotData['medicalConditions'] as List?)?.cast<String>() ?? const [],
+              emergencyContactName:
+                  (snapshotData['emergencyContact'] as Map?)?['name'] as String?,
+              emergencyContactPhone:
+                  (snapshotData['emergencyContact'] as Map?)?['phone'] as String?,
+            ),
+      staffInstructions: instructions,
       createdAt: ts('createdAt'),
       acceptedAt: ts('acceptedAt'),
       arrivedAt: ts('arrivedAt'),

@@ -6,6 +6,32 @@ class GeoPointValue {
   const GeoPointValue({required this.latitude, required this.longitude});
 }
 
+/// Denormalized patient info captured at SOS-creation time (server-side, in
+/// `triggerEmergencySOS`) so the hospital sees it even if the patient's
+/// profile later changes. See architecture doc §4.3 and the caveat in
+/// functions/src/emergency/patientSnapshot.ts — medicalConditions/
+/// emergencyContact are always empty/null today since no profile screen
+/// collects them yet.
+class PatientSnapshot {
+  final String name;
+  final String? phoneNumber;
+  final String? bloodGroup;
+  final int? age;
+  final List<String> medicalConditions;
+  final String? emergencyContactName;
+  final String? emergencyContactPhone;
+
+  const PatientSnapshot({
+    required this.name,
+    this.phoneNumber,
+    this.bloodGroup,
+    this.age,
+    this.medicalConditions = const [],
+    this.emergencyContactName,
+    this.emergencyContactPhone,
+  });
+}
+
 enum EmergencyStatus {
   requested,
   searchingHospital,
@@ -130,6 +156,8 @@ class EmergencyRequest {
   final String? assignedAmbulanceId;
   final String? cancelReason;
   final String? rejectReason;
+  final PatientSnapshot? patientSnapshot;
+  final List<String> staffInstructions;
   final DateTime? createdAt;
   final DateTime? acceptedAt;
   final DateTime? arrivedAt;
@@ -150,6 +178,8 @@ class EmergencyRequest {
     this.assignedAmbulanceId,
     this.cancelReason,
     this.rejectReason,
+    this.patientSnapshot,
+    this.staffInstructions = const [],
     this.createdAt,
     this.acceptedAt,
     this.arrivedAt,

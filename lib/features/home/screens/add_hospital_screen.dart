@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:medilink/features/home/models/hospital.dart';
@@ -8,6 +9,7 @@ import 'package:medilink/features/home/models/doctor.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
 import 'package:medilink/core/services/location_service.dart';
+import 'package:medilink/features/auth/providers/auth_providers.dart';
 
 class AddHospitalAndDoctorsScreen extends ConsumerStatefulWidget {
   const AddHospitalAndDoctorsScreen({super.key});
@@ -189,6 +191,16 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
       );
 
       await ref.read(hospitalControllerProvider.notifier).createHospital(hospital);
+
+      // Best-effort: pick up the hospital_admin custom claim's hospitalId,
+      // linked server-side by linkHospitalAdmin() once mirrorHospitalToFirestore
+      // processes this RTDB write. If the Cloud Function hasn't run yet this
+      // refresh is a no-op — claims fully propagate on next sign-in either way.
+      unawaited(
+        Future.delayed(const Duration(seconds: 2), () {
+          ref.read(rbacServiceProvider).refreshClaims();
+        }),
+      );
 
       if (!mounted) return;
 
