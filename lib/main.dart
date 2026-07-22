@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medilink/core/theme/app_theme.dart';
 import 'package:medilink/core/services/email_service.dart';
 import 'package:medilink/core/services/cache_service.dart';
+import 'package:medilink/core/services/local_notification_service.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
 import 'package:medilink/features/auth/screens/login_screen.dart';
 import 'package:medilink/features/command_center/presentation/screens/emergency_detail_screen.dart';
@@ -50,6 +51,9 @@ Future<void> main() async {
 
   // Initialize EmailJS for sending booking confirmations
   await EmailService.initialize();
+
+  // Initialize local scheduled notifications (medication reminders)
+  await LocalNotificationService.instance.initialize();
 
   runApp(const ProviderScope(child: MedilinkApp()));
 }

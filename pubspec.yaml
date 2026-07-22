@@ -71,6 +71,12 @@ dependencies:
   # Functional error handling (Either/Failure pattern for new features)
   fpdart: ^1.1.0
 
+  # Local scheduled notifications (medication reminders — not AI, see
+  # architecture doc §11)
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+  flutter_timezone: ^3.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

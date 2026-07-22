@@ -21,6 +21,8 @@ import 'package:medilink/features/notifications/presentation/providers/notificat
 import 'package:medilink/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:medilink/features/pharmacy/presentation/screens/medicine_search_screen.dart';
 import 'package:medilink/features/pharmacy/presentation/screens/prescription_upload_screen.dart';
+import 'package:medilink/features/ai_assistant/presentation/screens/ai_assistant_screen.dart';
+import 'package:medilink/features/medication_reminders/presentation/screens/medication_reminders_screen.dart';
 
 /// User home screen for browsing hospitals and booking appointments
 class UserHomeScreen extends ConsumerStatefulWidget {
@@ -292,6 +294,29 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const PrescriptionUploadScreen()),
+                    );
+                  },
+                ),
+                Divider(height: 1, color: AppColors.dividerLight),
+                _buildDrawerMenuItem(
+                  icon: Icons.smart_toy_outlined,
+                  label: 'AI Health Assistant',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AiAssistantScreen()),
+                    );
+                  },
+                ),
+                _buildDrawerMenuItem(
+                  icon: Icons.alarm_outlined,
+                  label: 'Medication Reminders',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MedicationRemindersScreen()),
                     );
                   },
                 ),
