@@ -2,6 +2,7 @@ import * as functionsV1 from "firebase-functions/v1";
 import { admin } from "../admin";
 import { requireHospitalStaff } from "./requireHospitalStaff";
 import { appendTimeline } from "./timeline";
+import { notifyUser } from "../notifications/sendFcm";
 
 const ACTIVE_STATUSES = [
   "accepted",
@@ -37,6 +38,12 @@ export const sendInstruction = functionsV1.https.onCall(async (data, context) =>
   // lib/features/emergency/domain/entities/emergency_timeline_event.dart,
   // which only ever renders `label`, never re-derives text from `status`.
   await appendTimeline(requestId, emergency.status as string, `Hospital: "${text}"`, role);
+  await notifyUser(emergency.patientUid as string, {
+    type: "emergency",
+    title: "Message from Hospital",
+    body: text,
+    data: { requestId },
+  });
 
   return { status: "sent" };
 });

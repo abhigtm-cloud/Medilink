@@ -2,6 +2,7 @@ import * as functionsV1 from "firebase-functions/v1";
 import { admin, rtdb } from "../admin";
 import { requireHospitalStaff } from "./requireHospitalStaff";
 import { appendTimeline } from "./timeline";
+import { notifyUser } from "../notifications/sendFcm";
 
 /**
  * Doctors already live in RTDB (`doctors/{hospitalId}/{doctorId}`, owned by
@@ -16,7 +17,7 @@ export const assignDoctor = functionsV1.https.onCall(async (data, context) => {
     throw new functionsV1.https.HttpsError("invalid-argument", "doctorId is required");
   }
 
-  const { ref, hospitalId, role } = await requireHospitalStaff(context, requestId, [
+  const { ref, emergency, hospitalId, role } = await requireHospitalStaff(context, requestId, [
     "accepted",
     "doctorAssigned",
   ]);
@@ -32,6 +33,12 @@ export const assignDoctor = functionsV1.https.onCall(async (data, context) => {
   await appendTimeline(requestId, "doctorAssigned", `Doctor Assigned: ${doctorName}`, role, {
     doctorId,
     doctorName,
+  });
+  await notifyUser(emergency.patientUid as string, {
+    type: "emergency",
+    title: "Doctor Assigned",
+    body: `Dr. ${doctorName} has been assigned to your case.`,
+    data: { requestId },
   });
 
   return { status: "doctorAssigned", doctorName };

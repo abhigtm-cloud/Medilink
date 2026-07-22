@@ -3,11 +3,12 @@ import { admin } from "../admin";
 import { requireHospitalStaff } from "./requireHospitalStaff";
 import { appendTimeline } from "./timeline";
 import { releaseQueueSlot } from "./queue";
+import { notifyUser } from "../notifications/sendFcm";
 
 export const rejectEmergency = functionsV1.https.onCall(async (data, context) => {
   const requestId = data.requestId as string;
   const reason = (data.reason as string) ?? "Unable to accommodate";
-  const { ref, hospitalId, role } = await requireHospitalStaff(context, requestId, [
+  const { ref, emergency, hospitalId, role } = await requireHospitalStaff(context, requestId, [
     "hospitalAssigned",
   ]);
 
@@ -18,6 +19,12 @@ export const rejectEmergency = functionsV1.https.onCall(async (data, context) =>
   });
   await releaseQueueSlot(hospitalId, requestId);
   await appendTimeline(requestId, "rejected", "Hospital Unable to Accept", role, { reason });
+  await notifyUser(emergency.patientUid as string, {
+    type: "emergency",
+    title: "Hospital Unable to Accept",
+    body: reason,
+    data: { requestId },
+  });
 
   return { status: "rejected" };
 });

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:medilink/core/services/fcm_service.dart';
 import 'package:medilink/core/services/rbac_service.dart';
 import 'package:medilink/features/auth/models/app_user.dart';
 import 'package:medilink/features/auth/repositories/auth_repository.dart';
@@ -48,6 +49,9 @@ final getUserProfileProvider =
 
 /// Provides a singleton instance of [RbacService].
 final rbacServiceProvider = Provider<RbacService>((ref) => RbacService());
+
+/// Provides a singleton instance of [FcmService].
+final fcmServiceProvider = Provider<FcmService>((ref) => FcmService());
 
 /// The signed-in user's server-verified role + hospital assignment, sourced
 /// from Firebase custom claims (see docs/EMERGENCY_PLATFORM_ARCHITECTURE.md §3).
@@ -150,6 +154,9 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
   Future<void> signOut() async {
     state = const AsyncValue.loading();
     try {
+      // Must run before signOut() — clearing the token needs the
+      // still-authenticated uid to find its RTDB path.
+      await _read.read(fcmServiceProvider).clearToken();
       await _repo.signOut();
       state = const AsyncValue.data(null);
       
@@ -196,6 +203,10 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
         // For normal users, delete their bookings
         await bookingRepo.deleteBookingsByUser(userId);
       }
+
+      // Must run before deleteAccount() — clearing the token needs the
+      // still-authenticated uid to find its RTDB path.
+      await _read.read(fcmServiceProvider).clearToken();
 
       // Finally, delete the user account
       await _repo.deleteAccount();

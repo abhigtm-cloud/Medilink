@@ -2,6 +2,7 @@ import * as functionsV1 from "firebase-functions/v1";
 import { admin, db } from "../admin";
 import { appendTimeline } from "./timeline";
 import { releaseQueueSlot } from "./queue";
+import { notifyHospitalStaff } from "../notifications/sendFcm";
 
 const CANCELLABLE_STATUSES = ["requested", "searchingHospital", "hospitalAssigned"];
 
@@ -51,6 +52,12 @@ export const cancelEmergency = functionsV1.https.onCall(async (data, context) =>
 
   if (emergency.selectedHospitalId) {
     await releaseQueueSlot(emergency.selectedHospitalId as string, requestId);
+    await notifyHospitalStaff(emergency.selectedHospitalId as string, {
+      type: "emergency",
+      title: "Emergency Cancelled",
+      body: "The patient cancelled this request.",
+      data: { requestId },
+    });
   }
 
   await appendTimeline(requestId, "cancelled", "Cancelled by patient", "patient", { reason });

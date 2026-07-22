@@ -3,6 +3,7 @@ import { admin } from "../admin";
 import { requireHospitalStaff } from "./requireHospitalStaff";
 import { appendTimeline } from "./timeline";
 import { releaseQueueSlot } from "./queue";
+import { notifyUser } from "../notifications/sendFcm";
 
 const CLOSABLE_STATUSES = [
   "accepted",
@@ -21,7 +22,7 @@ export const closeEmergency = functionsV1.https.onCall(async (data, context) => 
     throw new functionsV1.https.HttpsError("invalid-argument", "outcome is required");
   }
 
-  const { ref, hospitalId, role } = await requireHospitalStaff(
+  const { ref, emergency, hospitalId, role } = await requireHospitalStaff(
     context,
     requestId,
     CLOSABLE_STATUSES
@@ -35,6 +36,12 @@ export const closeEmergency = functionsV1.https.onCall(async (data, context) => 
   });
   await releaseQueueSlot(hospitalId, requestId);
   await appendTimeline(requestId, "completed", `Closed: ${outcome}`, role);
+  await notifyUser(emergency.patientUid as string, {
+    type: "emergency",
+    title: "Emergency Closed",
+    body: outcome,
+    data: { requestId },
+  });
 
   return { status: "completed" };
 });

@@ -5,6 +5,7 @@ import { enrichWithEta } from "./eta";
 import { loadPatientSnapshot } from "./patientSnapshot";
 import { rankHospitals, ScoredHospital } from "./scoring";
 import { appendTimeline } from "./timeline";
+import { notifyHospitalStaff } from "../notifications/sendFcm";
 
 const MAX_RADIUS_KM = 50;
 
@@ -100,11 +101,12 @@ export const triggerEmergencySOS = functionsV1.https.onCall(async (data, context
   });
   await appendTimeline(ref.id, "hospitalAssigned", "Hospital selected and notified", null);
 
-  // Push notification to hospital staff is deferred to the "Notification
-  // flow hardening" roadmap step (architecture doc §23 step 5) — FCM
-  // topics/tokens aren't wired up yet. Command Center picks this request up
-  // via the `hospital_status/{hospitalId}/queue` pointer doc in the
-  // meantime.
+  await notifyHospitalStaff(winner.candidate.hospitalId, {
+    type: "emergency",
+    title: `New ${priority} Emergency`,
+    body: `${emergencyType} emergency ${winner.candidate.distanceKm.toFixed(1)}km away`,
+    data: { requestId: ref.id },
+  });
 
   return {
     requestId: ref.id,

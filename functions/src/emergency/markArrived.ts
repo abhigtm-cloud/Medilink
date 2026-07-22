@@ -2,6 +2,7 @@ import * as functionsV1 from "firebase-functions/v1";
 import { admin } from "../admin";
 import { requireHospitalStaff } from "./requireHospitalStaff";
 import { appendTimeline } from "./timeline";
+import { notifyUser } from "../notifications/sendFcm";
 
 /**
  * Ambulance-dispatch/hospital-prep states (preparing, icuReserved,
@@ -13,7 +14,7 @@ import { appendTimeline } from "./timeline";
  */
 export const markArrived = functionsV1.https.onCall(async (data, context) => {
   const requestId = data.requestId as string;
-  const { ref, role } = await requireHospitalStaff(context, requestId, [
+  const { ref, emergency, role } = await requireHospitalStaff(context, requestId, [
     "accepted",
     "doctorAssigned",
   ]);
@@ -24,6 +25,12 @@ export const markArrived = functionsV1.https.onCall(async (data, context) => {
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
   await appendTimeline(requestId, "reachedHospital", "Patient Reached Hospital", role);
+  await notifyUser(emergency.patientUid as string, {
+    type: "emergency",
+    title: "Arrival Confirmed",
+    body: "You've been marked as arrived at the hospital.",
+    data: { requestId },
+  });
 
   return { status: "reachedHospital" };
 });
