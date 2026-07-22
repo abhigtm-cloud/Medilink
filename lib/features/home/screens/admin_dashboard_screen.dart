@@ -10,6 +10,12 @@ import 'package:medilink/features/home/providers/doctor_provider.dart';
 import 'package:medilink/features/home/screens/add_hospital_screen.dart';
 import 'package:medilink/features/home/screens/hospital_detail_screen.dart';
 import 'package:medilink/features/command_center/presentation/screens/command_center_dashboard_screen.dart';
+import 'package:medilink/features/home/screens/staff_management_screen.dart';
+import 'package:medilink/features/ambulance/presentation/screens/ambulance_management_screen.dart';
+import 'package:medilink/features/notifications/presentation/providers/notification_center_providers.dart';
+import 'package:medilink/features/notifications/presentation/screens/notification_center_screen.dart';
+import 'package:medilink/features/analytics/presentation/screens/analytics_dashboard_screen.dart';
+import 'package:medilink/features/pharmacy/presentation/screens/pharmacy_inventory_screen.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -68,6 +74,23 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           ],
         ),
         actions: [
+          Consumer(
+            builder: (context, ref, _) {
+              final unreadCount = ref.watch(unreadNotificationCountProvider);
+              return IconButton(
+                icon: Badge(
+                  isLabelVisible: unreadCount > 0,
+                  label: Text('$unreadCount'),
+                  child: const Icon(Icons.notifications_outlined),
+                ),
+                tooltip: 'Notifications',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationCenterScreen()),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.emergency, color: AppColors.error),
             tooltip: 'Emergency Command Center',
@@ -75,6 +98,46 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const CommandCenterDashboardScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.badge_outlined),
+            tooltip: 'Manage Staff',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const StaffManagementScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.local_shipping_outlined),
+            tooltip: 'Ambulance Fleet',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AmbulanceManagementScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.bar_chart_outlined),
+            tooltip: 'Analytics',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AnalyticsDashboardScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.medication_outlined),
+            tooltip: 'Pharmacy',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PharmacyInventoryScreen()),
               );
             },
           ),

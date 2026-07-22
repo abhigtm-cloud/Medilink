@@ -1,5 +1,6 @@
 export { onUserCreate } from "./rbac/onUserCreate";
 export { onUserRoleWrite } from "./rbac/onUserRoleWrite";
+export { assignStaffRole } from "./rbac/assignStaffRole";
 export { mirrorHospitalToFirestore } from "./hospital/mirrorHospitalToFirestore";
 export { seedHospitalStatus } from "./hospital/seedHospitalStatus";
 export { triggerEmergencySOS } from "./emergency/triggerEmergencySOS";
@@ -10,3 +11,11 @@ export { assignDoctor } from "./emergency/assignDoctor";
 export { sendInstruction } from "./emergency/sendInstruction";
 export { markArrived } from "./emergency/markArrived";
 export { closeEmergency } from "./emergency/closeEmergency";
+export { registerAmbulance } from "./ambulance/registerAmbulance";
+export { setAmbulanceAvailability } from "./ambulance/setAmbulanceAvailability";
+export { dispatchAmbulance } from "./ambulance/dispatchAmbulance";
+export { completeTrip } from "./ambulance/completeTrip";
+export { aggregateDailyAnalytics } from "./analytics/aggregateDailyAnalytics";
+export { onOrderStatusChange } from "./pharmacy/onOrderStatusChange";
+export { onPrescriptionUpload } from "./pharmacy/onPrescriptionUpload";
+export { sendAiMessage } from "./ai/sendAiMessage";

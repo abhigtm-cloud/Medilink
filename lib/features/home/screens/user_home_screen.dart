@@ -17,6 +17,10 @@ import 'package:medilink/features/auth/screens/login_screen.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
 import 'package:medilink/features/home/models/hospital.dart';
+import 'package:medilink/features/notifications/presentation/providers/notification_center_providers.dart';
+import 'package:medilink/features/notifications/presentation/screens/notification_center_screen.dart';
+import 'package:medilink/features/pharmacy/presentation/screens/medicine_search_screen.dart';
+import 'package:medilink/features/pharmacy/presentation/screens/prescription_upload_screen.dart';
 
 /// User home screen for browsing hospitals and booking appointments
 class UserHomeScreen extends ConsumerStatefulWidget {
@@ -139,9 +143,21 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
         ),
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: AppColors.primary),
-          onPressed: () {},
+        Consumer(
+          builder: (context, ref, _) {
+            final unreadCount = ref.watch(unreadNotificationCountProvider);
+            return IconButton(
+              icon: Badge(
+                isLabelVisible: unreadCount > 0,
+                label: Text('$unreadCount'),
+                child: const Icon(Icons.notifications_outlined, color: AppColors.primary),
+              ),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationCenterScreen()),
+              ),
+            );
+          },
         ),
         IconButton(
           icon: const Icon(Icons.account_circle_outlined, color: AppColors.primary),
@@ -254,6 +270,29 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                   onTap: () {
                     setState(() => _selectedBottomNav = 4);
                     Navigator.pop(context);
+                  },
+                ),
+                Divider(height: 1, color: AppColors.dividerLight),
+                _buildDrawerMenuItem(
+                  icon: Icons.medication_outlined,
+                  label: 'Pharmacy',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MedicineSearchScreen()),
+                    );
+                  },
+                ),
+                _buildDrawerMenuItem(
+                  icon: Icons.receipt_long_outlined,
+                  label: 'Upload Prescription',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const PrescriptionUploadScreen()),
+                    );
                   },
                 ),
               ],

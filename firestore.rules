@@ -1,10 +1,11 @@
 rules_version = '2';
 
 // Covers only the collections built so far: RBAC foundation, hospital
-// directory sync, and Feature 1 (Emergency SOS) — steps 1-2 of
-// docs/EMERGENCY_PLATFORM_ARCHITECTURE.md §23. Rules for ambulances,
-// pharmacy, etc. get added in the same change that introduces those
-// collections' Cloud Functions/UI.
+// directory sync, Feature 1 (Emergency SOS), Feature 3 (Command Center),
+// Feature 6 (Ambulance Management), and notification-flow hardening —
+// steps 1-5 of docs/EMERGENCY_PLATFORM_ARCHITECTURE.md §23. Rules for
+// pharmacy, analytics, etc. get added in the same change that introduces
+// those collections' Cloud Functions/UI.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -76,6 +77,105 @@ service cloud.firestore {
                      );
         allow write: if false; // Cloud Function only — append-only audit trail
       }
+    }
+
+    // ---------- ambulances (Feature 6 — Ambulance Management) ----------
+    match /ambulances/{ambulanceId} {
+      allow read: if isSignedIn();
+      // registerAmbulance/dispatchAmbulance/completeTrip (Cloud Functions)
+      // are the intended path; this is a broader safety-net matching
+      // architecture doc §6 — ambulances are lower-stakes than emergency
+      // medical records, so direct staff edits (fixing a phone number etc.)
+      // are allowed too.
+      allow write: if belongsToHospital(resource.data.hospitalId)
+                     || belongsToHospital(request.resource.data.hospitalId);
+      // narrow carve-out: a driver may self-report only their own live
+      // location + status, without needing hospital-staff claims
+      allow update: if isAmbulanceDriver() && resource.data.driverUid == request.auth.uid
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['currentLocation', 'currentLocationUpdatedAt', 'status']);
+
+      match /trips/{tripId} {
+        allow read: if isSignedIn();
+        allow write: if belongsToHospital(get(/databases/$(database)/documents/ambulances/$(ambulanceId)).data.hospitalId)
+                       || (isAmbulanceDriver()
+                           && get(/databases/$(database)/documents/ambulances/$(ambulanceId)).data.driverUid == request.auth.uid);
+      }
+    }
+    // mirror of ambulances/{id}/trips/{tripId}, queried by emergencyRequestId
+    // for the patient's tracking screen — kept read-only for clients since
+    // it's a Cloud-Function-maintained mirror, not a second source of truth.
+    match /ambulance_trips/{tripId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // ---------- in-app notification center (notification-flow hardening) ----------
+    // Reliable fallback for push — see sendFcm.ts / architecture doc §16.
+    // Written only by notifyUser/notifyHospitalStaff (Admin SDK); clients
+    // may read their own items and mark them read.
+    match /notifications/{uid}/items/{notificationId} {
+      allow read: if isOwner(uid);
+      allow update: if isOwner(uid)
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+      allow create, delete: if false;
+    }
+
+    // ---------- analytics (Feature 10 — read-only, that hospital's admin only) ----------
+    match /analytics_daily/{docId} {
+      allow read: if isHospitalAdmin() && docId.matches(myHospitalId() + '_.*');
+      allow write: if false; // aggregateDailyAnalytics scheduled Cloud Function only
+    }
+
+    // ---------- pharmacy (Feature 7) ----------
+    match /medicine_inventory/{hospitalId}/items/{medicineId} {
+      allow read: if isSignedIn(); // patients browse to search medicines
+      allow write: if belongsToHospital(hospitalId) && (isPharmacy() || isHospitalAdmin());
+    }
+    match /prescriptions/{prescriptionId} {
+      allow read: if isSignedIn() && (
+                     resource.data.patientUid == request.auth.uid ||
+                     belongsToHospital(resource.data.hospitalId)
+                   );
+      allow create: if isOwner(request.resource.data.patientUid);
+      allow update: if belongsToHospital(resource.data.hospitalId) && (isPharmacy() || isHospitalAdmin());
+      allow delete: if false;
+    }
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && (
+                     resource.data.patientUid == request.auth.uid ||
+                     belongsToHospital(resource.data.hospitalId)
+                   );
+      allow create: if isOwner(request.resource.data.patientUid);
+      allow update: if belongsToHospital(resource.data.hospitalId) && (isPharmacy() || isHospitalAdmin());
+      allow delete: if false;
+
+      match /tracking/{eventId} {
+        allow read: if isSignedIn();
+        allow write: if false; // onOrderStatusChange Cloud Function only
+      }
+    }
+
+    // ---------- AI assistant (Feature 5) ----------
+    match /ai_chats/{chatId} {
+      allow read, create: if isOwner(resource.data.patientUid) || isOwner(request.resource.data.patientUid);
+      allow update: if isOwner(resource.data.patientUid)
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['lastMessagePreview', 'updatedAt']);
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isOwner(get(/databases/$(database)/documents/ai_chats/$(chatId)).data.patientUid);
+        // the assistant's reply is sendAiMessage Cloud-Function-only
+        allow create: if isOwner(get(/databases/$(database)/documents/ai_chats/$(chatId)).data.patientUid)
+                        && request.resource.data.role == 'user';
+        allow update, delete: if false;
+      }
+    }
+
+    // ---------- medication reminders (local notifications, not AI) ----------
+    match /medication_reminders/{uid}/items/{reminderId} {
+      allow read, write: if isOwner(uid);
     }
   }
 }
