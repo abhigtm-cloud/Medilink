@@ -7,6 +7,7 @@ import 'package:medilink/features/emergency/domain/entities/emergency_request.da
 import 'package:medilink/features/emergency/domain/entities/emergency_timeline_event.dart';
 import 'package:medilink/features/emergency/presentation/providers/emergency_providers.dart';
 import 'package:medilink/features/emergency/presentation/widgets/emergency_status_timeline.dart';
+import 'package:medilink/features/ambulance/presentation/widgets/ambulance_tracking_card.dart';
 import 'package:medilink/features/home/models/hospital.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
 
@@ -63,6 +64,10 @@ class _TrackingBody extends ConsumerWidget {
           if (request.selectedHospitalId != null)
             _HospitalCard(hospitalId: request.selectedHospitalId!),
           const SizedBox(height: 16),
+          if (request.assignedAmbulanceId != null) ...[
+            AmbulanceTrackingCard(ambulanceId: request.assignedAmbulanceId!),
+            const SizedBox(height: 16),
+          ],
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),

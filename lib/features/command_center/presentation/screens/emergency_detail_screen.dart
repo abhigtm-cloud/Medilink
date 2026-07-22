@@ -4,6 +4,8 @@ import 'package:fpdart/fpdart.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:medilink/core/error/failures.dart';
 import 'package:medilink/core/theme/app_colors.dart';
+import 'package:medilink/features/ambulance/domain/entities/ambulance.dart';
+import 'package:medilink/features/ambulance/presentation/providers/ambulance_providers.dart';
 import 'package:medilink/features/command_center/domain/repositories/command_center_repository.dart';
 import 'package:medilink/features/command_center/presentation/providers/command_center_providers.dart';
 import 'package:medilink/features/command_center/presentation/widgets/emergency_priority_badge.dart';
@@ -226,6 +228,14 @@ class _ActionBarState extends ConsumerState<_ActionBar> {
               label: const Text('Assign Doctor'),
               onPressed: _busy ? null : () => _showDoctorPicker(context, repo),
             ),
+          if (widget.request.assignedAmbulanceId == null) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.local_shipping),
+              label: const Text('Dispatch Ambulance'),
+              onPressed: _busy ? null : () => _showAmbulancePicker(context),
+            ),
+          ],
           const SizedBox(height: 8),
           OutlinedButton.icon(
             icon: const Icon(Icons.message),
@@ -327,6 +337,47 @@ class _ActionBarState extends ConsumerState<_ActionBar> {
 
     await _run(() async {
       final result = await repo.assignDoctor(widget.request.id, doctorId);
+      result.match(_showFailure, (_) {});
+    });
+  }
+
+  Future<void> _showAmbulancePicker(BuildContext context) async {
+    final hospitalId = widget.request.selectedHospitalId;
+    if (hospitalId == null) return;
+
+    final fleet = await ref.read(hospitalFleetProvider(hospitalId).future);
+    final available = fleet.where((a) => a.status == AmbulanceStatus.available).toList();
+    if (!context.mounted) return;
+    if (available.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('No ambulances available right now')));
+      return;
+    }
+
+    final ambulanceId = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dispatch Ambulance'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView(
+            shrinkWrap: true,
+            children: available
+                .map((ambulance) => ListTile(
+                      title: Text(ambulance.vehicleNumber),
+                      subtitle: Text('${ambulance.driverName} · ${ambulance.driverPhone}'),
+                      onTap: () => Navigator.pop(context, ambulance.id),
+                    ))
+                .toList(),
+          ),
+        ),
+      ),
+    );
+    if (ambulanceId == null) return;
+
+    await _run(() async {
+      final result =
+          await ref.read(ambulanceRepositoryProvider).dispatchAmbulance(widget.request.id, ambulanceId);
       result.match(_showFailure, (_) {});
     });
   }
