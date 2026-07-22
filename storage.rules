@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// Prescriptions and medical reports (Feature 7 — Pharmacy). Each user's
+// files live under their own uid so ownership is a straight path match —
+// no custom-claims lookup needed here since Storage rules can't read
+// Firestore/RTDB cheaply the way firestore.rules can.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /prescriptions/{uid}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid
+                     && request.resource.size < 10 * 1024 * 1024
+                     && request.resource.contentType.matches('image/.*');
+    }
+    match /medical_reports/{uid}/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == uid
+                           && request.resource.size < 15 * 1024 * 1024;
+    }
+  }
+}
