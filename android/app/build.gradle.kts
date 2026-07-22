@@ -8,10 +8,13 @@ plugins {
 apply(plugin = "com.google.gms.google-services")
 
 dependencies {
- 
+
   implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
 
-
+  // Required by flutter_local_notifications (medication reminders) —
+  // desugaring backports java.time APIs it depends on to older Android
+  // versions. See android { compileOptions { isCoreLibraryDesugaringEnabled } } below.
+  coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
 }
 
@@ -23,6 +26,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlin {
