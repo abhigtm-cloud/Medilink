@@ -32,6 +32,8 @@ jobs:
         run: flutter pub get
       
       - name: Build release APK
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m"
         run: flutter build apk --release --android-skip-build-dependency-validation
       
       - name: Upload APK as artifact
