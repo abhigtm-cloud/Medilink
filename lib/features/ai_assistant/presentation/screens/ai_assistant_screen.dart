@@ -185,14 +185,16 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
     return messagesAsync.when(
       data: (messages) {
         _scrollToBottom();
-        if (messages.isEmpty) {
+        if (messages.isEmpty && !_sending) {
           return const SizedBox.shrink();
         }
+        final itemCount = messages.length + (_sending ? 1 : 0);
         return ListView.builder(
           controller: _scrollController,
           padding: const EdgeInsets.all(12),
-          itemCount: messages.length,
+          itemCount: itemCount,
           itemBuilder: (context, index) {
+            if (index == messages.length) return const _TypingIndicator();
             final message = messages[index];
             if (message.role == ChatRole.system) return const SizedBox.shrink();
             if (message.urgencyFlag) return _UrgencyCard(message: message);
@@ -285,6 +287,13 @@ class _MessageBubble extends StatelessWidget {
             bottomRight: Radius.circular(isUser ? 4 : 16),
           ),
           border: isUser ? null : Border.all(color: AppColors.borderLight),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Text(
           message.content,
@@ -349,6 +358,79 @@ class _UrgencyCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Three-dot "assistant is typing" bubble shown while waiting on the
+/// `sendAiMessage` reply, so a slow rule-engine response doesn't read as a
+/// frozen/broken chat.
+class _TypingIndicator extends StatefulWidget {
+  const _TypingIndicator();
+
+  @override
+  State<_TypingIndicator> createState() => _TypingIndicatorState();
+}
+
+class _TypingIndicatorState extends State<_TypingIndicator> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.cardLight,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+            bottomRight: Radius.circular(16),
+            bottomLeft: Radius.circular(4),
+          ),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(3, (i) {
+                final t = (_controller.value - i * 0.2) % 1.0;
+                final opacity = 0.3 + 0.7 * (t < 0.5 ? t * 2 : (1 - t) * 2).clamp(0.0, 1.0);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: Opacity(
+                    opacity: opacity,
+                    child: Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: AppColors.textTertiaryLight,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            );
+          },
+        ),
       ),
     );
   }

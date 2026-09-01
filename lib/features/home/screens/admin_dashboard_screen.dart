@@ -261,24 +261,105 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 );
               }
 
-              return ListView.builder(
+              return ListView(
                 padding: const EdgeInsets.all(16),
-                itemCount: hospitals.length,
-                itemBuilder: (context, index) {
-                  final hospital = hospitals[index];
-                  return HospitalCard(
-                    hospital: hospital,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => HospitalDetailScreen(
-                            hospitalId: hospital.id!,
+                children: [
+                  // Quick Management Cards
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildActionCard(
+                          context: context,
+                          title: 'Staff Hub',
+                          subtitle: 'Manage roles',
+                          icon: Icons.badge_outlined,
+                          color: AppColors.primary,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const StaffManagementScreen()),
                           ),
                         ),
-                      );
-                    },
-                  );
-                },
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildActionCard(
+                          context: context,
+                          title: 'Ambulances',
+                          subtitle: 'Fleet & drivers',
+                          icon: Icons.local_shipping_outlined,
+                          color: Colors.orange,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AmbulanceManagementScreen()),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildActionCard(
+                          context: context,
+                          title: 'Pharmacy',
+                          subtitle: 'Inventory & meds',
+                          icon: Icons.medication_outlined,
+                          color: Colors.teal,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const PharmacyInventoryScreen()),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildActionCard(
+                          context: context,
+                          title: 'Command Center',
+                          subtitle: 'Live SOS dispatch',
+                          icon: Icons.emergency,
+                          color: AppColors.error,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const CommandCenterDashboardScreen()),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Your Hospitals (${hospitals.length})',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AddHospitalAndDoctorsScreen()),
+                        ),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Add Hospital'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ...hospitals.map((hospital) => HospitalCard(
+                        hospital: hospital,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => HospitalDetailScreen(
+                                hospitalId: hospital.id!,
+                              ),
+                            ),
+                          );
+                        },
+                      )),
+                ],
               );
             },
             loading: () => const Center(
@@ -422,6 +503,58 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           child: Text('Auth Error: $error'),
         );
       },
+    );
+  }
+
+  Widget _buildActionCard({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.cardLight,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderLight),
+          boxShadow: AppTheme.cardShadow,
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: color.withOpacity(0.12),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

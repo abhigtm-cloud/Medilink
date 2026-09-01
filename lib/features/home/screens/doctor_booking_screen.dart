@@ -370,12 +370,12 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) throw Exception('User not authenticated');
 
-      final slotsAsync = ref.watch(
+      final slotsAsync = ref.read(
         getSlotsByDoctorAndDateProvider(
           (widget.hospitalId, widget.doctorId, _getDateString(_selectedDate)),
         ),
       );
-      
+
       final slots = slotsAsync.value ?? [];
       final slot = slots.firstWhere((s) => s.id == _selectedSlotId);
 

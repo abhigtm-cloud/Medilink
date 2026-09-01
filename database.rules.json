@@ -1,0 +1,73 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+
+    "hospitals": {
+      ".read": true,
+      "$hospitalId": {
+        ".write": "auth != null"
+      }
+    },
+
+    "doctors": {
+      ".read": true,
+      "$hospitalId": {
+        ".write": "auth != null"
+      }
+    },
+
+    "slots": {
+      ".read": true,
+      "$hospitalId": {
+        ".write": "auth != null"
+      }
+    },
+
+    "bookings": {
+      ".read": "auth != null",
+      "$bookingId": {
+        ".write": "auth != null"
+      }
+    },
+
+    "emergencies": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "emergency_timelines": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "staff": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "ambulances": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "pharmacy": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "users": {
+      ".read": "auth != null",
+      "$userId": {
+        ".write": "auth != null"
+      }
+    },
+
+    "notifications": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null"
+      }
+    }
+  }
+}

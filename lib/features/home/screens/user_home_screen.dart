@@ -10,6 +10,8 @@ import 'package:medilink/features/home/screens/search_screen.dart';
 import 'package:medilink/features/home/screens/bookings_screen.dart';
 import 'package:medilink/features/home/screens/account_screen.dart';
 import 'package:medilink/features/home/screens/hospital_map_screen.dart';
+import 'package:medilink/core/services/cache_service.dart';
+import 'package:medilink/features/emergency/domain/entities/emergency_request.dart';
 import 'package:medilink/features/emergency/presentation/widgets/sos_button.dart';
 import 'package:medilink/features/emergency/presentation/providers/emergency_providers.dart';
 import 'package:medilink/features/emergency/presentation/screens/emergency_tracking_screen.dart';
@@ -45,19 +47,13 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
     _resumeActiveEmergencyIfAny();
   }
 
-  /// If the app was killed/reopened mid-emergency, jump straight back into
-  /// tracking instead of the home tab. See architecture doc §8.
+  /// If the app was killed/reopened mid-emergency, restore active emergency state
   Future<void> _resumeActiveEmergencyIfAny() async {
     final requestId =
-        await ref.read(emergencyRepositoryProvider).getCachedActiveRequestId();
+        await ref.read(emergencyRepositoryProvider).getCachedActiveRequestId() ??
+        CacheService.getActiveEmergencyId();
     if (requestId == null || !mounted) return;
     ref.read(activeEmergencyIdProvider.notifier).state = requestId;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EmergencyTrackingScreen(requestId: requestId),
-      ),
-    );
   }
 
   Future<void> _loadCurrentLocation() async {
@@ -119,7 +115,12 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
       backgroundColor: AppColors.surfaceLight,
       appBar: appBar,
       drawer: drawer,
-      body: body,
+      body: Column(
+        children: [
+          const ActiveEmergencyBanner(),
+          Expanded(child: body),
+        ],
+      ),
       floatingActionButton: _selectedBottomNav == 0 ? const SosButton() : null,
       bottomNavigationBar: _buildBottomNavigation(),
     );
@@ -163,7 +164,7 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
         ),
         IconButton(
           icon: const Icon(Icons.account_circle_outlined, color: AppColors.primary),
-          onPressed: () {},
+          onPressed: () => setState(() => _selectedBottomNav = 4),
         ),
       ],
       centerTitle: false,
@@ -770,6 +771,186 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
         BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Maps'),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Account'),
       ],
+    );
+  }
+}
+
+/// Floating persistent emergency notification banner visible across the app
+/// whenever an emergency SOS request is active.
+class ActiveEmergencyBanner extends ConsumerWidget {
+  const ActiveEmergencyBanner({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeId = ref.watch(activeEmergencyIdProvider);
+    if (activeId == null || activeId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final emergencyAsync = ref.watch(watchEmergencyProvider(activeId));
+
+    return emergencyAsync.when(
+      data: (request) {
+        final isClosed = request.status == EmergencyStatus.cancelled ||
+            request.status == EmergencyStatus.completed ||
+            request.status == EmergencyStatus.rejected;
+
+        if (isClosed) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.red.shade700, Colors.red.shade900],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.4),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: Colors.white24,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.emergency,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'EMERGENCY SOS IN PROGRESS',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        Text(
+                          '${request.emergencyType.label} • ${request.status.label}',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'ETA: ~${request.etaMinutes?.toInt() ?? 5}m',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.red.shade800,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Icons.location_on, size: 16),
+                      label: const Text(
+                        'Live Tracking Screen',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EmergencyTrackingScreen(requestId: request.id),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    ),
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Cancel Emergency?'),
+                          content: const Text(
+                            'Are you sure you want to cancel this emergency SOS?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('No'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: const Text('Yes, Cancel'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed == true) {
+                        await ref
+                            .read(emergencyRepositoryProvider)
+                            .cancelEmergency(request.id, 'Cancelled by patient from banner');
+                        await CacheService.setActiveEmergencyId(null);
+                        ref.read(activeEmergencyIdProvider.notifier).state = null;
+                      }
+                    },
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(fontSize: 11, color: Colors.white70),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }

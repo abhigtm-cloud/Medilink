@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:medilink/core/services/cache_service.dart';
 import 'package:medilink/features/emergency/data/datasources/emergency_local_datasource.dart';
 import 'package:medilink/features/emergency/data/datasources/emergency_remote_datasource.dart';
 import 'package:medilink/features/emergency/data/repositories/emergency_repository_impl.dart';
@@ -23,8 +24,10 @@ final emergencyRepositoryProvider = Provider<EmergencyRepository>((ref) {
 
 /// The request id of the emergency currently being tracked, if any. Set
 /// right after `triggerSos` resolves, or restored on cold start from the
-/// repository's local cache (see main.dart bootstrap).
-final activeEmergencyIdProvider = StateProvider<String?>((ref) => null);
+/// repository's local cache.
+final activeEmergencyIdProvider = StateProvider<String?>((ref) {
+  return CacheService.getActiveEmergencyId();
+});
 
 final watchEmergencyProvider =
     StreamProvider.autoDispose.family<EmergencyRequest, String>((ref, requestId) {
@@ -61,6 +64,7 @@ class SosController extends StateNotifier<AsyncValue<String?>> {
     result.match(
       (failure) => state = AsyncValue.error(failure, StackTrace.current),
       (requestId) {
+        CacheService.setActiveEmergencyId(requestId);
         _ref.read(activeEmergencyIdProvider.notifier).state = requestId;
         state = AsyncValue.data(requestId);
       },

@@ -119,6 +119,29 @@ class CacheService {
     }
   }
 
+  // ========== Active Emergency Persistence ==========
+
+  /// Get currently active emergency request ID (persisted across app restarts)
+  static String? getActiveEmergencyId() {
+    try {
+      final cached = _usersBox.get('active_emergency_id');
+      return cached as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Save or clear active emergency request ID
+  static Future<void> setActiveEmergencyId(String? requestId) async {
+    try {
+      if (requestId != null && requestId.isNotEmpty) {
+        await _usersBox.put('active_emergency_id', requestId);
+      } else {
+        await _usersBox.delete('active_emergency_id');
+      }
+    } catch (_) {}
+  }
+
   /// Clear all offline caches (called on user logout)
   static Future<void> clearAllCache() async {
     try {

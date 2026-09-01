@@ -29,11 +29,18 @@ class AppUser {
   final String email;
   final String? displayName;
   final UserRole role;
+  final String? photoUrl;
   final String? phoneNumber;
   final String? dateOfBirth;
   final String? gender;
   final String? bloodGroup;
   final String? address;
+  final String? allergies;
+  final String? medicalConditions;
+  final String? currentMedications;
+  final String? emergencyContactName;
+  final String? emergencyContactPhone;
+  final String? emergencyContactRelation;
   final DateTime? createdAt;
 
   const AppUser({
@@ -41,11 +48,18 @@ class AppUser {
     required this.email,
     this.displayName,
     required this.role,
+    this.photoUrl,
     this.phoneNumber,
     this.dateOfBirth,
     this.gender,
     this.bloodGroup,
     this.address,
+    this.allergies,
+    this.medicalConditions,
+    this.currentMedications,
+    this.emergencyContactName,
+    this.emergencyContactPhone,
+    this.emergencyContactRelation,
     this.createdAt,
   });
 
@@ -54,11 +68,18 @@ class AppUser {
     required String email,
     String? displayName,
     UserRole? role,
+    String? photoUrl,
     String? phoneNumber,
     String? dateOfBirth,
     String? gender,
     String? bloodGroup,
     String? address,
+    String? allergies,
+    String? medicalConditions,
+    String? currentMedications,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+    String? emergencyContactRelation,
     DateTime? createdAt,
   }) {
     return AppUser(
@@ -66,28 +87,42 @@ class AppUser {
       email: email,
       displayName: displayName,
       role: role ?? _getRoleFromEmail(email),
+      photoUrl: photoUrl,
       phoneNumber: phoneNumber,
       dateOfBirth: dateOfBirth,
       gender: gender,
       bloodGroup: bloodGroup,
       address: address,
+      allergies: allergies,
+      medicalConditions: medicalConditions,
+      currentMedications: currentMedications,
+      emergencyContactName: emergencyContactName,
+      emergencyContactPhone: emergencyContactPhone,
+      emergencyContactRelation: emergencyContactRelation,
       createdAt: createdAt ?? DateTime.now(),
     );
   }
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
-    final email = json['email'] as String;
+    final email = json['email'] as String? ?? '';
     return AppUser.create(
-      uid: json['uid'] as String,
+      uid: json['uid'] as String? ?? '',
       email: email,
       displayName: json['displayName'] as String?,
+      photoUrl: json['photoUrl'] as String?,
       phoneNumber: json['phoneNumber'] as String?,
       dateOfBirth: json['dateOfBirth'] as String?,
       gender: json['gender'] as String?,
       bloodGroup: json['bloodGroup'] as String?,
       address: json['address'] as String?,
+      allergies: json['allergies'] as String?,
+      medicalConditions: json['medicalConditions'] as String?,
+      currentMedications: json['currentMedications'] as String?,
+      emergencyContactName: json['emergencyContactName'] as String?,
+      emergencyContactPhone: json['emergencyContactPhone'] as String?,
+      emergencyContactRelation: json['emergencyContactRelation'] as String?,
       createdAt: json['createdAt'] != null 
-        ? DateTime.parse(json['createdAt'] as String)
+        ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
         : DateTime.now(),
       role: _getRoleFromEmail(email),
     );
@@ -98,11 +133,18 @@ class AppUser {
       'uid': uid,
       'email': email,
       'displayName': displayName,
+      'photoUrl': photoUrl,
       'phoneNumber': phoneNumber,
       'dateOfBirth': dateOfBirth,
       'gender': gender,
       'bloodGroup': bloodGroup,
       'address': address,
+      'allergies': allergies,
+      'medicalConditions': medicalConditions,
+      'currentMedications': currentMedications,
+      'emergencyContactName': emergencyContactName,
+      'emergencyContactPhone': emergencyContactPhone,
+      'emergencyContactRelation': emergencyContactRelation,
       'createdAt': createdAt?.toIso8601String(),
     };
   }
@@ -112,11 +154,18 @@ class AppUser {
     String? email,
     String? displayName,
     UserRole? role,
+    String? photoUrl,
     String? phoneNumber,
     String? dateOfBirth,
     String? gender,
     String? bloodGroup,
     String? address,
+    String? allergies,
+    String? medicalConditions,
+    String? currentMedications,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+    String? emergencyContactRelation,
     DateTime? createdAt,
   }) {
     return AppUser(
@@ -124,11 +173,18 @@ class AppUser {
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
       role: role ?? this.role,
+      photoUrl: photoUrl ?? this.photoUrl,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
       bloodGroup: bloodGroup ?? this.bloodGroup,
       address: address ?? this.address,
+      allergies: allergies ?? this.allergies,
+      medicalConditions: medicalConditions ?? this.medicalConditions,
+      currentMedications: currentMedications ?? this.currentMedications,
+      emergencyContactName: emergencyContactName ?? this.emergencyContactName,
+      emergencyContactPhone: emergencyContactPhone ?? this.emergencyContactPhone,
+      emergencyContactRelation: emergencyContactRelation ?? this.emergencyContactRelation,
       createdAt: createdAt ?? this.createdAt,
     );
   }

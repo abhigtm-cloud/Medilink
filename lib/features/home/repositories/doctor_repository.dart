@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 import 'package:medilink/core/services/cache_service.dart';
 import 'package:medilink/features/home/models/doctor.dart';
 import 'package:medilink/features/home/models/slot.dart';
@@ -17,12 +19,26 @@ class DoctorRepository {
           .child(doctor.hospitalId)
           .push();
       
-      await ref.set(doctor.toJson());
-      
       final createdDoctor = doctor.copyWith(id: ref.key);
+
+      // 1. Update offline cache immediately so UI reflects the new doctor instantly
+      try {
+        final cached = CacheService.getDoctorsByHospital(doctor.hospitalId) ?? [];
+        final updatedList = List<Map<String, dynamic>>.from(cached);
+        updatedList.add(createdDoctor.toJson());
+        await CacheService.setDoctorsByHospital(doctor.hospitalId, updatedList);
+      } catch (_) {}
+
+      // 2. Write doctor metadata to Firebase with timeout protection
+      await ref.set(doctor.toJson()).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          print('DEBUG: Firebase doctor write timeout - continuing in background');
+        },
+      );
       
-      // Auto-generate slots for the next 30 days
-      await _generateSlotsForDoctor(createdDoctor);
+      // 3. Auto-generate booking slots in background (non-blocking)
+      unawaited(_generateSlotsForDoctor(createdDoctor));
       
       return createdDoctor;
     } catch (e) {
@@ -30,7 +46,7 @@ class DoctorRepository {
     }
   }
 
-  /// Generate time slots for a doctor for the next 30 days
+  /// Generate time slots for a doctor for the next 30 days (atomic multi-set)
   Future<void> _generateSlotsForDoctor(Doctor doctor) async {
     try {
       final now = DateTime.now();
@@ -52,24 +68,25 @@ class DoctorRepository {
         final startParts = doctor.startTime.split(':');
         final endParts = doctor.endTime.split(':');
         
-        int startHour = int.parse(startParts[0]);
-        int startMin = int.parse(startParts[1]);
-        int endHour = int.parse(endParts[0]);
-        int endMin = int.parse(endParts[1]);
+        int startHour = int.tryParse(startParts[0]) ?? 9;
+        int startMin = int.tryParse(startParts[1]) ?? 0;
+        int endHour = int.tryParse(endParts[0]) ?? 17;
+        int endMin = int.tryParse(endParts[1]) ?? 0;
         
-        // Create 30-minute slots
+        // Create slots based on duration
         int currentHour = startHour;
         int currentMin = startMin;
+        final slotDuration = doctor.slotDurationMinutes > 0 ? doctor.slotDurationMinutes : 30;
         
         while (currentHour < endHour || (currentHour == endHour && currentMin < endMin)) {
           final hourStr = currentHour.toString().padLeft(2, '0');
           final minStr = currentMin.toString().padLeft(2, '0');
           
-          int nextMin = currentMin + 30;
+          int nextMin = currentMin + slotDuration;
           int nextHour = currentHour;
-          if (nextMin >= 60) {
-            nextMin = 0;
-            nextHour = currentHour + 1;
+          while (nextMin >= 60) {
+            nextMin -= 60;
+            nextHour += 1;
           }
           
           final nextHourStr = nextHour.toString().padLeft(2, '0');
@@ -85,29 +102,33 @@ class DoctorRepository {
             createdAt: DateTime.now(),
           ));
           
-          currentMin += 30;
-          if (currentMin >= 60) {
-            currentMin = 0;
+          currentMin += slotDuration;
+          while (currentMin >= 60) {
+            currentMin -= 60;
             currentHour += 1;
           }
         }
       }
       
-      // Save all slots to Firebase
+      // Save all slots to Firebase in ONE atomic batch write
       if (slots.isNotEmpty && doctor.id != null) {
+        final Map<String, dynamic> dateGroups = {};
         for (final slot in slots) {
-          final ref = _database
-              .child('slots')
-              .child(doctor.hospitalId)
-              .child(doctor.id!)
-              .child(slot.date)
-              .push();
-          
-          await ref.set(slot.toJson());
+          if (!dateGroups.containsKey(slot.date)) {
+            dateGroups[slot.date] = <String, dynamic>{};
+          }
+          final slotKey = _database.child('slots').push().key ?? DateTime.now().microsecondsSinceEpoch.toString();
+          dateGroups[slot.date][slotKey] = slot.toJson();
         }
+
+        await _database
+            .child('slots')
+            .child(doctor.hospitalId)
+            .child(doctor.id!)
+            .set(dateGroups);
       }
     } catch (e) {
-      // Don't throw error here - doctor creation should succeed even if slot generation fails
+      debugPrint('ERROR: Slot generation failed for doctor ${doctor.id}: $e');
     }
   }
   

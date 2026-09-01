@@ -106,6 +106,52 @@ class EmergencyRequestModel extends EmergencyRequest {
     );
   }
 
+  EmergencyRequestModel copyWith({
+    String? id,
+    String? patientUid,
+    EmergencyStatus? status,
+    EmergencyPriority? priority,
+    EmergencyType? emergencyType,
+    GeoPointValue? patientLocation,
+    String? selectedHospitalId,
+    double? distanceKm,
+    double? etaMinutes,
+    String? assignedDoctorId,
+    String? assignedAmbulanceId,
+    String? cancelReason,
+    String? rejectReason,
+    PatientSnapshot? patientSnapshot,
+    List<String>? staffInstructions,
+    DateTime? createdAt,
+    DateTime? acceptedAt,
+    DateTime? arrivedAt,
+    DateTime? completedAt,
+    DateTime? cancelledAt,
+  }) {
+    return EmergencyRequestModel(
+      id: id ?? this.id,
+      patientUid: patientUid ?? this.patientUid,
+      status: status ?? this.status,
+      priority: priority ?? this.priority,
+      emergencyType: emergencyType ?? this.emergencyType,
+      patientLocation: patientLocation ?? this.patientLocation,
+      selectedHospitalId: selectedHospitalId ?? this.selectedHospitalId,
+      distanceKm: distanceKm ?? this.distanceKm,
+      etaMinutes: etaMinutes ?? this.etaMinutes,
+      assignedDoctorId: assignedDoctorId ?? this.assignedDoctorId,
+      assignedAmbulanceId: assignedAmbulanceId ?? this.assignedAmbulanceId,
+      cancelReason: cancelReason ?? this.cancelReason,
+      rejectReason: rejectReason ?? this.rejectReason,
+      patientSnapshot: patientSnapshot ?? this.patientSnapshot,
+      staffInstructions: staffInstructions ?? this.staffInstructions,
+      createdAt: createdAt ?? this.createdAt,
+      acceptedAt: acceptedAt ?? this.acceptedAt,
+      arrivedAt: arrivedAt ?? this.arrivedAt,
+      completedAt: completedAt ?? this.completedAt,
+      cancelledAt: cancelledAt ?? this.cancelledAt,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

@@ -285,6 +285,70 @@ class BookingRepository {
     }
   }
 
+  /// Real-time stream of all bookings for a hospital (updates instantly upon new booking)
+  Stream<List<Booking>> watchBookingsByHospital(String hospitalId) {
+    return _database.child(_bookingsPath).onValue.map((event) {
+      if (!event.snapshot.exists || event.snapshot.value == null) {
+        return <Booking>[];
+      }
+      final bookings = <Booking>[];
+      final data = event.snapshot.value as Map<dynamic, dynamic>? ?? {};
+      data.forEach((key, value) {
+        if (value is Map<dynamic, dynamic>) {
+          try {
+            final booking = Booking.fromJson(
+              Map<String, dynamic>.from(value),
+              docId: key.toString(),
+            );
+            if (booking.hospitalId == hospitalId) {
+              bookings.add(booking);
+            }
+          } catch (_) {}
+        }
+      });
+      bookings.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return bookings;
+    }).handleError((err) {
+      print('DEBUG: RTDB bookings stream note: $err');
+      return <Booking>[];
+    });
+  }
+
+  /// Real-time stream of pending bookings for a hospital
+  Stream<List<Booking>> watchPendingBookingsByHospital(String hospitalId) {
+    return watchBookingsByHospital(hospitalId).map((list) =>
+        list.where((b) => b.status == BookingStatus.pending).toList());
+  }
+
+  /// Real-time stream of bookings for a user
+  Stream<List<Booking>> watchBookingsByUser(String userId) {
+    return _database.child(_bookingsPath).onValue.map((event) {
+      if (!event.snapshot.exists || event.snapshot.value == null) {
+        return <Booking>[];
+      }
+      final bookings = <Booking>[];
+      final data = event.snapshot.value as Map<dynamic, dynamic>? ?? {};
+      data.forEach((key, value) {
+        if (value is Map<dynamic, dynamic>) {
+          try {
+            final booking = Booking.fromJson(
+              Map<String, dynamic>.from(value),
+              docId: key.toString(),
+            );
+            if (booking.userId == userId) {
+              bookings.add(booking);
+            }
+          } catch (_) {}
+        }
+      });
+      bookings.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return bookings;
+    }).handleError((err) {
+      print('DEBUG: RTDB user bookings stream note: $err');
+      return <Booking>[];
+    });
+  }
+
   /// Approve a booking (change status from pending to confirmed)
   Future<void> approveBooking(String bookingId, String hospitalId) async {
     try {

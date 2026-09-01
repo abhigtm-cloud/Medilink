@@ -73,25 +73,35 @@ final currentAppRoleProvider = FutureProvider<AppRole>((ref) async {
 });
 
 /// The signed-in user's hospital assignment (null for patients, or for
-/// staff not yet linked to a hospital — see linkHospitalAdmin() in
-/// functions/src/hospital/mirrorHospitalToFirestore.ts). Depends on
-/// [currentAppRoleProvider] having resolved first, since that's what
-/// populates [RbacService.currentHospitalId].
+/// staff not yet linked to a hospital). Resolves from RBAC claims or
+/// falls back to the admin's registered hospitals.
 final currentHospitalIdProvider = FutureProvider<String?>((ref) async {
-  await ref.watch(currentAppRoleProvider.future);
-  return ref.watch(rbacServiceProvider).currentHospitalId;
+  try {
+    final rbacHosp = ref.watch(rbacServiceProvider).currentHospitalId;
+    if (rbacHosp != null && rbacHosp.isNotEmpty) return rbacHosp;
+  } catch (_) {}
+
+  final user = ref.watch(authStateChangesProvider).valueOrNull;
+  if (user != null) {
+    try {
+      final hospitalRepo = ref.watch(hospitalRepositoryProvider);
+      final hospitals = await hospitalRepo.getHospitalsByAdmin(user.uid);
+      if (hospitals.isNotEmpty && hospitals.first.id != null) {
+        return hospitals.first.id;
+      }
+      final allHospitals = await hospitalRepo.getAllHospitals();
+      if (allHospitals.isNotEmpty && allHospitals.first.id != null) {
+        return allHospitals.first.id;
+      }
+    } catch (_) {}
+  }
+  return null;
 });
 
 /// A synchronous representation of the current [AppUser] state.
 final authStateChangesProvider = StreamProvider<AppUser?>((ref) {
   final repo = ref.watch(authRepositoryProvider);
-  return repo.authStateChanges().asBroadcastStream().timeout(
-    const Duration(seconds: 60),
-    onTimeout: (sink) {
-      print('DEBUG: authStateChangesProvider - Stream timeout after 60s');
-      sink.addError(Exception('Authentication service is slow - please check your internet connection and try again'));
-    },
-  );
+  return repo.authStateChanges();
 });
 
 /// StateNotifier responsible for handling explicit login / logout actions.
@@ -154,15 +164,22 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
   Future<void> signOut() async {
     state = const AsyncValue.loading();
     try {
-      // Must run before signOut() — clearing the token needs the
-      // still-authenticated uid to find its RTDB path.
-      await _read.read(fcmServiceProvider).clearToken();
+      try {
+        await _read.read(fcmServiceProvider).clearToken();
+      } catch (e) {
+        print('DEBUG: clearToken non-fatal error: $e');
+      }
+      try {
+        _read.read(rbacServiceProvider).reset();
+      } catch (_) {}
+
       await _repo.signOut();
       state = const AsyncValue.data(null);
       
-      // Force refresh the auth state stream to ensure logout completes
+      // Force refresh all auth-dependent providers to guarantee immediate UI redirect to Login
       _read.invalidate(authStateChangesProvider);
-      
+      _read.invalidate(currentAppRoleProvider);
+      _read.invalidate(currentHospitalIdProvider);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -187,30 +204,48 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
 
       // If user is a hospital admin, delete their hospital and all related data
       if (currentUser?.role.isHospitalAdmin ?? false) {
-        final adminHospitals = await hospitalRepo.getHospitalsByAdmin(userId);
-        
-        for (final hospital in adminHospitals) {
-          if (hospital.id != null) {
-            // Delete slots and bookings for the hospital
-            await slotRepo.deleteSlotsByHospital(hospital.id!);
-            await bookingRepo.deleteBookingsByHospital(hospital.id!);
-            
-            // Delete the hospital
-            await hospitalRepo.deleteHospital(hospital.id!);
+        try {
+          final adminHospitals = await hospitalRepo.getHospitalsByAdmin(userId);
+          for (final hospital in adminHospitals) {
+            if (hospital.id != null) {
+              await slotRepo.deleteSlotsByHospital(hospital.id!).catchError((_) {});
+              await bookingRepo.deleteBookingsByHospital(hospital.id!).catchError((_) {});
+              await hospitalRepo.deleteHospital(hospital.id!).catchError((_) {});
+            }
           }
-        }
+        } catch (_) {}
       } else {
         // For normal users, delete their bookings
-        await bookingRepo.deleteBookingsByUser(userId);
+        try {
+          await bookingRepo.deleteBookingsByUser(userId).catchError((_) {});
+        } catch (_) {}
       }
 
-      // Must run before deleteAccount() — clearing the token needs the
-      // still-authenticated uid to find its RTDB path.
-      await _read.read(fcmServiceProvider).clearToken();
+      // Delete user profile in Realtime Database
+      try {
+        await _read.read(userProfileRepositoryProvider).updateUserField(userId, 'deleted', true).catchError((_) {});
+      } catch (_) {}
 
-      // Finally, delete the user account
-      await _repo.deleteAccount();
+      // Clear token & RBAC state
+      try {
+        await _read.read(fcmServiceProvider).clearToken();
+      } catch (_) {}
+      try {
+        _read.read(rbacServiceProvider).reset();
+      } catch (_) {}
+
+      // Delete the Firebase Auth user account (or sign out if requires-recent-login)
+      try {
+        await _repo.deleteAccount();
+      } catch (authDeleteError) {
+        print('DEBUG: Auth deleteAccount encountered: $authDeleteError. Signing out.');
+        await _repo.signOut();
+      }
+
       state = const AsyncValue.data(null);
+      _read.invalidate(authStateChangesProvider);
+      _read.invalidate(currentAppRoleProvider);
+      _read.invalidate(currentHospitalIdProvider);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }

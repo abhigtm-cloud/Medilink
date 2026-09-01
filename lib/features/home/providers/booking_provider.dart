@@ -11,25 +11,25 @@ final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
   return BookingRepository();
 });
 
-/// Returns bookings for a specific user
+/// Returns real-time stream of bookings for a specific user
 final getBookingsByUserProvider =
-    FutureProvider.family<List<Booking>, String>((ref, userId) async {
+    StreamProvider.family<List<Booking>, String>((ref, userId) {
   final repo = ref.watch(bookingRepositoryProvider);
-  return repo.getBookingsByUser(userId);
+  return repo.watchBookingsByUser(userId);
 });
 
-/// Returns pending bookings for a specific hospital
+/// Returns real-time stream of pending bookings for a specific hospital
 final getPendingBookingsByHospitalProvider =
-    FutureProvider.family<List<Booking>, String>((ref, hospitalId) async {
+    StreamProvider.family<List<Booking>, String>((ref, hospitalId) {
   final repo = ref.watch(bookingRepositoryProvider);
-  return repo.getPendingBookingsByHospital(hospitalId);
+  return repo.watchPendingBookingsByHospital(hospitalId);
 });
 
-/// Returns all bookings for a specific hospital
+/// Returns real-time stream of all bookings for a specific hospital
 final getBookingsByHospitalProvider =
-    FutureProvider.family<List<Booking>, String>((ref, hospitalId) async {
+    StreamProvider.family<List<Booking>, String>((ref, hospitalId) {
   final repo = ref.watch(bookingRepositoryProvider);
-  return repo.getBookingsByHospital(hospitalId);
+  return repo.watchBookingsByHospital(hospitalId);
 });
 
 /// Returns total bookings count for a specific doctor

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -70,16 +71,21 @@ class FcmService {
   /// Removes this device's token and topic subscription. Call before
   /// signing out — needs the still-authenticated uid to find the RTDB path.
   Future<void> clearToken() async {
-    final user = _auth.currentUser;
-    final token = await _messaging.getToken();
-    if (user != null && token != null) {
-      await _usersRef.child(user.uid).child('fcmTokens').child(token).remove();
+    if (kIsWeb) return;
+    try {
+      final user = _auth.currentUser;
+      final token = await _messaging.getToken().catchError((_) => null);
+      if (user != null && token != null) {
+        await _usersRef.child(user.uid).child('fcmTokens').child(token).remove().catchError((_) => null);
+      }
+      if (_subscribedHospitalTopic != null) {
+        await _messaging.unsubscribeFromTopic(_subscribedHospitalTopic!).catchError((_) => null);
+        _subscribedHospitalTopic = null;
+      }
+      await _tokenRefreshSub?.cancel();
+      _tokenRefreshSub = null;
+    } catch (_) {
+      // Ignored: token removal failure must not block logout
     }
-    if (_subscribedHospitalTopic != null) {
-      await _messaging.unsubscribeFromTopic(_subscribedHospitalTopic!);
-      _subscribedHospitalTopic = null;
-    }
-    await _tokenRefreshSub?.cancel();
-    _tokenRefreshSub = null;
   }
 }

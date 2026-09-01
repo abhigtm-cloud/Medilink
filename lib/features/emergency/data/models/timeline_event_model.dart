@@ -17,9 +17,29 @@ class TimelineEventModel extends EmergencyTimelineEvent {
     return TimelineEventModel(
       id: doc.id,
       status: EmergencyStatus.fromValue(data['status'] as String?),
-      label: data['label'] as String? ?? '',
+      label: data['label'] as String? ?? data['title'] as String? ?? '',
       actorRole: data['actorRole'] as String?,
       timestamp: ts?.toDate() ?? DateTime.now(),
     );
   }
+
+  factory TimelineEventModel.fromJson(Map<String, dynamic> json, String id) {
+    return TimelineEventModel(
+      id: id,
+      status: EmergencyStatus.fromValue(json['status'] as String?),
+      label: json['label'] as String? ?? json['title'] as String? ?? '',
+      actorRole: json['actorRole'] as String?,
+      timestamp: json['timestamp'] != null
+          ? DateTime.tryParse(json['timestamp'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'status': status.name,
+    'label': label,
+    'actorRole': actorRole,
+    'timestamp': timestamp.toIso8601String(),
+  };
 }

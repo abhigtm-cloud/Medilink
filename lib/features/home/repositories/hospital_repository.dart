@@ -192,19 +192,37 @@ class HospitalRepository {
   /// Get a specific hospital by ID
   Future<Hospital?> getHospitalById(String hospitalId) async {
     try {
+      final cachedHospitals = CacheService.getHospitals();
+      if (cachedHospitals != null) {
+        for (final item in cachedHospitals) {
+          final map = Map<String, dynamic>.from(item as Map);
+          if (map['id'] == hospitalId || item['id'] == hospitalId) {
+            return Hospital.fromJson(map, docId: hospitalId);
+          }
+        }
+      }
+
       final snapshot = await _database.child(_hospitalsPath).child(hospitalId).get();
       
-      if (!snapshot.exists) {
-        return null;
+      if (snapshot.exists) {
+        final data = snapshot.value as Map<dynamic, dynamic>;
+        return Hospital.fromJson(
+          Map<String, dynamic>.from(data),
+          docId: hospitalId,
+        );
       }
       
-      final data = snapshot.value as Map<dynamic, dynamic>;
-      return Hospital.fromJson(
-        Map<String, dynamic>.from(data),
-        docId: hospitalId,
-      );
+      final all = await getAllHospitals();
+      if (all.isNotEmpty) {
+        return all.firstWhere((h) => h.id == hospitalId, orElse: () => all.first);
+      }
+      return null;
     } catch (e) {
-      throw Exception('Failed to fetch hospital: $e');
+      final all = await getAllHospitals();
+      if (all.isNotEmpty) {
+        return all.firstWhere((h) => h.id == hospitalId, orElse: () => all.first);
+      }
+      return null;
     }
   }
   

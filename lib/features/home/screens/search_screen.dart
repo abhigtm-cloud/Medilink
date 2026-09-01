@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'dart:convert';
 import 'package:medilink/core/theme/app_colors.dart';
 import 'package:medilink/core/theme/app_theme.dart';
+import 'package:medilink/core/services/location_service.dart';
+import 'package:medilink/core/services/emergency_service.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
 import 'package:medilink/features/home/models/hospital.dart';
 import 'package:medilink/features/home/screens/doctor_list_screen.dart';
 
-/// Search Screen for searching hospitals by specialty or name.
+/// Search Screen for searching hospitals by location or name, sorted by distance.
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
@@ -17,6 +20,24 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  Position? _userPosition;
+  bool _loadingLocation = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserLocation();
+  }
+
+  Future<void> _fetchUserLocation() async {
+    final pos = await LocationService.getCurrentLocation();
+    if (mounted) {
+      setState(() {
+        _userPosition = pos;
+        _loadingLocation = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -24,16 +45,48 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.dispose();
   }
 
-  List<Hospital> _filterHospitals(List<Hospital> hospitals) {
-    final query = _searchController.text.toLowerCase();
-    if (query.isEmpty) {
-      return hospitals;
+  List<Map<String, dynamic>> _processAndFilterHospitals(List<Hospital> hospitals) {
+    final query = _searchController.text.toLowerCase().trim();
+
+    final list = <Map<String, dynamic>>[];
+
+    for (final hospital in hospitals) {
+      final matchesQuery = query.isEmpty ||
+          hospital.name.toLowerCase().contains(query) ||
+          hospital.address.toLowerCase().contains(query);
+
+      if (!matchesQuery) continue;
+
+      double? distKm;
+      if (_userPosition != null && hospital.latitude != null && hospital.longitude != null) {
+        distKm = EmergencyService.calculateDistance(
+          lat1: _userPosition!.latitude,
+          lon1: _userPosition!.longitude,
+          lat2: hospital.latitude!,
+          lon2: hospital.longitude!,
+        );
+      }
+
+      list.add({
+        'hospital': hospital,
+        'distance': distKm,
+        'distanceStr': distKm == null
+            ? null
+            : (distKm < 1 ? '${(distKm * 1000).toStringAsFixed(0)}m' : '${distKm.toStringAsFixed(1)}km'),
+      });
     }
-    return hospitals
-        .where((hospital) =>
-            hospital.name.toLowerCase().contains(query) ||
-            hospital.address.toLowerCase().contains(query))
-        .toList();
+
+    // Sort nearest first (items without coordinates go to end)
+    list.sort((a, b) {
+      final distA = a['distance'] as double?;
+      final distB = b['distance'] as double?;
+      if (distA == null && distB == null) return 0;
+      if (distA == null) return 1;
+      if (distB == null) return -1;
+      return distA.compareTo(distB);
+    });
+
+    return list;
   }
 
   @override
@@ -44,7 +97,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         backgroundColor: AppColors.cardLight,
         elevation: 1,
         title: Text(
-          'Search Hospitals',
+          'Search Hospitals Nearby',
           style: TextStyle(
             color: AppColors.primary,
             fontSize: 18,
@@ -70,7 +123,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 controller: _searchController,
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
-                  hintText: 'Search hospital or location',
+                  hintText: 'Search hospital name, address or location',
                   hintStyle: TextStyle(
                     color: AppColors.textSecondaryLight,
                   ),
@@ -79,6 +132,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     Icons.search,
                     color: AppColors.primary,
                   ),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {});
+                          },
+                        )
+                      : null,
                 ),
               ),
             ),
@@ -98,9 +160,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return hospitalsAsync.when(
       data: (hospitals) {
-        final filtered = _filterHospitals(hospitals);
+        final processed = _processAndFilterHospitals(hospitals);
 
-        if (filtered.isEmpty) {
+        if (processed.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -112,7 +174,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'No hospitals found',
+                  'No hospitals found matching search',
                   style: TextStyle(
                     color: AppColors.textSecondaryLight,
                     fontSize: 14,
@@ -125,9 +187,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          itemCount: filtered.length,
+          itemCount: processed.length,
           itemBuilder: (context, index) {
-            final hospital = filtered[index];
+            final item = processed[index];
+            final hospital = item['hospital'] as Hospital;
+            final distanceStr = item['distanceStr'] as String?;
+
             return GestureDetector(
               onTap: () {
                 if (hospital.id != null) {
@@ -187,15 +252,38 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            hospital.name,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimaryLight,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  hospital.name,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textPrimaryLight,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (distanceStr != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    distanceStr,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -228,6 +316,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              if (hospital.latitude != null && hospital.longitude != null)
+                                TextButton.icon(
+                                  onPressed: () {
+                                    LocationService.openGoogleMaps(
+                                      latitude: hospital.latitude!,
+                                      longitude: hospital.longitude!,
+                                      locationName: hospital.name,
+                                    );
+                                  },
+                                  icon: const Icon(Icons.directions, size: 14, color: AppColors.primary),
+                                  label: const Text('Map', style: TextStyle(fontSize: 11, color: AppColors.primary)),
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(50, 24),
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
                             ],
                           ),
                         ],
@@ -269,3 +374,4 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 }
+

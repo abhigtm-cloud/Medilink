@@ -6,6 +6,7 @@ import 'package:medilink/features/auth/models/app_user.dart';
 import 'package:medilink/features/home/screens/admin_dashboard_screen.dart';
 import 'package:medilink/features/home/screens/user_home_screen.dart';
 import 'package:medilink/features/ambulance/presentation/screens/ambulance_driver_home_screen.dart';
+import 'package:medilink/features/auth/screens/login_screen.dart';
 
 /// Role-based home screen that routes to admin, ambulance-driver, or user
 /// home. Only `hospital_admin` (old email-domain convention) and
@@ -34,9 +35,7 @@ class HomeScreen extends ConsumerWidget {
     return authState.when(
       data: (user) {
         if (user == null) {
-          return const Scaffold(
-            body: Center(child: Text('Not authenticated')),
-          );
+          return const LoginScreen();
         }
 
         if (appRoleAsync.valueOrNull == AppRole.ambulanceDriver) {

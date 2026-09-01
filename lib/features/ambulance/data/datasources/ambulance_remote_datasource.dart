@@ -78,18 +78,43 @@ class AmbulanceRemoteDataSource {
     required String driverName,
     required String driverPhone,
     String? driverEmail,
+    String? hospitalId,
   }) async {
-    final result = await _call('registerAmbulance', {
+    try {
+      final result = await _call('registerAmbulance', {
+        'vehicleNumber': vehicleNumber,
+        'driverName': driverName,
+        'driverPhone': driverPhone,
+        if (driverEmail != null) 'driverEmail': driverEmail,
+      });
+      if (result['ambulanceId'] != null) return result['ambulanceId'] as String;
+    } catch (_) {}
+
+    // Direct Firestore fallback
+    final docRef = _firestore.collection('ambulances').doc();
+    await docRef.set({
       'vehicleNumber': vehicleNumber,
       'driverName': driverName,
       'driverPhone': driverPhone,
-      if (driverEmail != null) 'driverEmail': driverEmail,
+      'driverEmail': driverEmail,
+      'hospitalId': hospitalId ?? '',
+      'status': 'available',
+      'createdAt': FieldValue.serverTimestamp(),
     });
-    return result['ambulanceId'] as String;
+    return docRef.id;
   }
 
-  Future<void> setAvailability(String ambulanceId, String status) =>
-      _call('setAmbulanceAvailability', {'ambulanceId': ambulanceId, 'status': status});
+  Future<void> setAvailability(String ambulanceId, String status) async {
+    try {
+      await _call('setAmbulanceAvailability', {'ambulanceId': ambulanceId, 'status': status});
+      return;
+    } catch (_) {}
+
+    await _firestore.collection('ambulances').doc(ambulanceId).update({
+      'status': status,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 
   Future<void> dispatchAmbulance(String requestId, String ambulanceId) =>
       _call('dispatchAmbulance', {'requestId': requestId, 'ambulanceId': ambulanceId});

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medilink/core/theme/app_theme.dart';
@@ -25,11 +26,7 @@ final navigatorKey = GlobalKey<NavigatorState>();
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 /// Runs in a separate background isolate when a push arrives while the app
-/// is backgrounded/terminated — must be a top-level function. It doesn't
-/// need to do anything beyond re-init Firebase; the system tray notification
-/// is shown automatically from the message's `notification` payload, and
-/// tapping it is handled by `onMessageOpenedApp`/`getInitialMessage` once the
-/// app is foregrounded again.
+/// is backgrounded/terminated — must be a top-level function.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -37,17 +34,16 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Mobile-only app - uses native Firebase SDK for iOS/Android
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  if (!kIsWeb) {
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  }
 
   // Add sample hospitals if database is empty
   await _addSampleHospitalsIfNeeded();
 
   // Initialize OFFLINE-FIRST caching service
-  // Data persists indefinitely even when system is OFF or on different network
   await CacheService.initialize();
-
 
   // Initialize EmailJS for sending booking confirmations
   await EmailService.initialize();
@@ -65,8 +61,6 @@ Future<void> _addSampleHospitalsIfNeeded() async {
     final snapshot = await db.child('hospitals').get();
     
     if (!snapshot.exists) {
-
-      
       await db.child('hospitals').set({
         'hospital_1': {
           'name': 'City Medical Hospital',
@@ -101,17 +95,11 @@ Future<void> _addSampleHospitalsIfNeeded() async {
           'createdAt': DateTime.now().toIso8601String(),
         },
       });
-      
-
-    } else {
-
     }
   } catch (e) {
-
     // Don't block app startup if this fails
   }
 }
-
 
 /// Root widget for the MEDILINK application.
 class MedilinkApp extends ConsumerStatefulWidget {
@@ -128,9 +116,11 @@ class _MedilinkAppState extends ConsumerState<MedilinkApp> {
   @override
   void initState() {
     super.initState();
-    _foregroundSub = FirebaseMessaging.onMessage.listen(_showForegroundBanner);
-    _openedAppSub = FirebaseMessaging.onMessageOpenedApp.listen(_openDeepLink);
-    FirebaseMessaging.instance.getInitialMessage().then(_openDeepLink);
+    if (!kIsWeb) {
+      _foregroundSub = FirebaseMessaging.onMessage.listen(_showForegroundBanner);
+      _openedAppSub = FirebaseMessaging.onMessageOpenedApp.listen(_openDeepLink);
+      FirebaseMessaging.instance.getInitialMessage().then(_openDeepLink);
+    }
   }
 
   @override

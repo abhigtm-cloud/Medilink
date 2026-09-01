@@ -1,0 +1,9 @@
+{
+    "workbench.activityBar.autoHide": true,
+    "workbench.activityBar.compact": true,
+    "workbench.activityBar.location": "default",
+    "workbench.iconTheme": "vs-seti",
+    "workbench.preferredHighContrastColorTheme": "Default High Contrast",
+    "workbench.sideBar.location": "left",
+    "workbench.statusBar.visible": true
+}

@@ -9,6 +9,7 @@ import 'package:medilink/features/home/models/doctor.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
 import 'package:medilink/core/services/location_service.dart';
+import 'package:medilink/core/theme/app_colors.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
 
 class AddHospitalAndDoctorsScreen extends ConsumerStatefulWidget {
@@ -62,7 +63,7 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
     final address = _hospitalAddressController.text.trim();
     if (address.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an address first')),
+        const SnackBar(content: Text('Please enter an address or city first')),
       );
       return;
     }
@@ -91,8 +92,8 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('❌ Address not found. Please check and try again.'),
-              backgroundColor: Colors.red,
+              content: Text('❌ Address not found. Try including city name (e.g. "Kharar" or "Chandigarh").'),
+              backgroundColor: Colors.orange,
             ),
           );
         }
@@ -102,6 +103,41 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _useCurrentLocation() async {
+    setState(() => _geocodingAddress = true);
+    try {
+      final position = await LocationService.getCurrentLocation();
+      if (position != null) {
+        final placeName = await LocationService.getPlaceName(position.latitude, position.longitude);
+        setState(() {
+          _geocodedLatitude = position.latitude;
+          _geocodedLongitude = position.longitude;
+          if (_hospitalAddressController.text.trim().isEmpty) {
+            _hospitalAddressController.text = placeName;
+          }
+          _geocodingAddress = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ Current GPS detected: ${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        setState(() => _geocodingAddress = false);
+      }
+    } catch (e) {
+      setState(() => _geocodingAddress = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Location error: $e')),
         );
       }
     }
@@ -231,11 +267,7 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
         );
 
         await ref.read(doctorControllerProvider.notifier).createDoctor(doctor);
-
         if (!mounted) return;
-
-        // Small delay to ensure Firebase write completes
-        await Future.delayed(const Duration(milliseconds: 500));
       }
 
       if (!mounted) return;
@@ -366,33 +398,80 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
                                 },
                               ),
                               const SizedBox(height: 8),
-                              // Geocode Button
-                              SizedBox(
-                                width: double.infinity,
-                                child: FilledButton.icon(
-                                  onPressed: _geocodingAddress ? null : _geocodeAddress,
-                                  icon: _geocodingAddress
-                                      ? const SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        )
-                                      : const Icon(Icons.location_on),
-                                  label: Text(
-                                    _geocodingAddress
-                                        ? 'Finding Location...'
-                                        : (_geocodedLatitude != null
-                                            ? '✅ Location Found'
-                                            : '📍 Find Location on Map'),
-                                  ),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: _geocodedLatitude != null
-                                        ? Colors.green
-                                        : Colors.blue,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
+                               // Dual Location Action Buttons
+                               Row(
+                                 children: [
+                                   Expanded(
+                                     child: OutlinedButton.icon(
+                                       onPressed: _geocodingAddress ? null : _geocodeAddress,
+                                       icon: const Icon(Icons.search, size: 16),
+                                       label: const Text('📍 Find on Map', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                       style: OutlinedButton.styleFrom(
+                                         padding: const EdgeInsets.symmetric(vertical: 12),
+                                       ),
+                                     ),
+                                   ),
+                                   const SizedBox(width: 8),
+                                   Expanded(
+                                     child: FilledButton.icon(
+                                       onPressed: _geocodingAddress ? null : _useCurrentLocation,
+                                       icon: const Icon(Icons.my_location, size: 16),
+                                       label: const Text('🎯 Use My GPS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                       style: FilledButton.styleFrom(
+                                         backgroundColor: AppColors.primary,
+                                         padding: const EdgeInsets.symmetric(vertical: 12),
+                                       ),
+                                     ),
+                                   ),
+                                 ],
+                               ),
+                               if (_geocodingAddress) ...[
+                                 const SizedBox(height: 8),
+                                 const Center(
+                                   child: Row(
+                                     mainAxisAlignment: MainAxisAlignment.center,
+                                     children: [
+                                       SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                                       SizedBox(width: 8),
+                                       Text('Locating address...', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                     ],
+                                   ),
+                                 ),
+                               ],
+                               if (_geocodedLatitude != null && _geocodedLongitude != null) ...[
+                                 const SizedBox(height: 8),
+                                 Container(
+                                   padding: const EdgeInsets.all(10),
+                                   decoration: BoxDecoration(
+                                     color: Colors.green.withOpacity(0.1),
+                                     borderRadius: BorderRadius.circular(8),
+                                     border: Border.all(color: Colors.green.withOpacity(0.4)),
+                                   ),
+                                   child: Row(
+                                     children: [
+                                       const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                                       const SizedBox(width: 8),
+                                       Expanded(
+                                         child: Text(
+                                           'GPS: ${_geocodedLatitude!.toStringAsFixed(4)}, ${_geocodedLongitude!.toStringAsFixed(4)}',
+                                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.green),
+                                         ),
+                                       ),
+                                       InkWell(
+                                         onTap: () => LocationService.openGoogleMaps(
+                                           latitude: _geocodedLatitude!,
+                                           longitude: _geocodedLongitude!,
+                                           locationName: _hospitalNameController.text.isNotEmpty
+                                               ? _hospitalNameController.text
+                                               : 'Hospital Location',
+                                         ),
+                                         child: const Text('Preview Map', style: TextStyle(fontSize: 11, color: Colors.blue, decoration: TextDecoration.underline)),
+                                       ),
+                                     ],
+                                   ),
+                                 ),
+                               ],
+                               const SizedBox(height: 12),
                               TextFormField(
                                 controller: _hospitalContactController,
                                 decoration: const InputDecoration(

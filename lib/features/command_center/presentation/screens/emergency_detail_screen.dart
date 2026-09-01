@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:medilink/core/error/failures.dart';
+import 'package:medilink/core/services/location_service.dart';
 import 'package:medilink/core/theme/app_colors.dart';
 import 'package:medilink/features/ambulance/domain/entities/ambulance.dart';
 import 'package:medilink/features/ambulance/presentation/providers/ambulance_providers.dart';
@@ -107,18 +108,84 @@ class EmergencyDetailScreen extends ConsumerWidget {
 
   Widget _buildPatientCard(EmergencyRequest request) {
     final snapshot = request.patientSnapshot;
+    final location = request.patientLocation;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Patient', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Patient Info & Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                if (request.distanceKm != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${request.distanceKm!.toStringAsFixed(1)} km away',
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (location != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.location_on, color: Colors.red, size: 28),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Patient GPS Coordinates',
+                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                          ),
+                          Text(
+                            'Lat: ${location.latitude.toStringAsFixed(5)}, Lng: ${location.longitude.toStringAsFixed(5)}',
+                            style: const TextStyle(fontSize: 12, color: Colors.black87),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.map, color: AppColors.primary),
+                      tooltip: 'View Patient on Map',
+                      onPressed: () {
+                        LocationService.openGoogleMaps(
+                          latitude: location.latitude,
+                          longitude: location.longitude,
+                          locationName: 'Emergency Patient Location',
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             if (snapshot == null)
-              const Text('Patient details unavailable')
+              const Text('Patient medical details unavailable')
             else ...[
-              Text(snapshot.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(snapshot.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
               if (snapshot.age != null) Text('Age: ${snapshot.age}'),
               if (snapshot.bloodGroup != null) Text('Blood Group: ${snapshot.bloodGroup}'),
               if (snapshot.medicalConditions.isNotEmpty)
@@ -132,7 +199,7 @@ class EmergencyDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.call),
-                  label: Text('Call ${snapshot.phoneNumber}'),
+                  label: Text('Call Patient (${snapshot.phoneNumber})'),
                   onPressed: () => launchUrl(Uri.parse('tel:${snapshot.phoneNumber}')),
                 ),
               ],

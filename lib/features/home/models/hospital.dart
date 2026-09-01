@@ -47,6 +47,31 @@ class Hospital {
   }
 
   factory Hospital.fromJson(Map<String, dynamic> json, {String? docId}) {
+    double? lat = (json['latitude'] as num?)?.toDouble();
+    double? lng = (json['longitude'] as num?)?.toDouble();
+
+    // Auto-resolve known city/area coordinates if lat/lng were not set during creation
+    if (lat == null || lng == null) {
+      final addr = (json['address'] as String? ?? '').toLowerCase();
+      final name = (json['name'] as String? ?? '').toLowerCase();
+      if (addr.contains('kharar') || name.contains('kharar')) {
+        lat = 30.7441;
+        lng = 76.6471;
+      } else if (addr.contains('chandigarh') || name.contains('chandigarh')) {
+        lat = 30.7333;
+        lng = 76.7794;
+      } else if (addr.contains('mohali') || name.contains('mohali')) {
+        lat = 30.7046;
+        lng = 76.7179;
+      } else if (addr.contains('panchkula') || name.contains('panchkula')) {
+        lat = 30.6942;
+        lng = 76.8606;
+      } else if (addr.contains('delhi') || name.contains('delhi')) {
+        lat = 28.6139;
+        lng = 77.2090;
+      }
+    }
+
     return Hospital(
       id: docId ?? json['id'] as String?,
       name: json['name'] as String,
@@ -57,8 +82,8 @@ class Hospital {
           ? DateTime.parse(json['createdAt'] as String)
           : null,
       photoUrl: json['photoUrl'] as String?,
-      latitude: json['latitude'] as double?,
-      longitude: json['longitude'] as double?,
+      latitude: lat,
+      longitude: lng,
     );
   }
 
