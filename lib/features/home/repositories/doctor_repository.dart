@@ -246,6 +246,77 @@ class DoctorRepository {
     }
   }
   
+  /// Update doctor's attendance / absence status in real time
+  Future<void> updateDoctorAbsentStatus({
+    required String hospitalId,
+    required String doctorId,
+    required bool isAbsent,
+    String? reason,
+  }) async {
+    try {
+      await _database
+          .child(_doctorsPath)
+          .child(hospitalId)
+          .child(doctorId)
+          .update({
+        'isAbsent': isAbsent,
+        'absentReason': reason ?? (isAbsent ? 'On Leave / Absent' : null),
+      });
+
+      // Also update in offline cache
+      try {
+        final cached = CacheService.getDoctorsByHospital(hospitalId);
+        if (cached != null) {
+          final updated = cached.map((d) {
+            if (d['id'] == doctorId) {
+              final copy = Map<String, dynamic>.from(d);
+              copy['isAbsent'] = isAbsent;
+              copy['absentReason'] = reason;
+              return copy;
+            }
+            return d;
+          }).toList();
+          await CacheService.setDoctorsByHospital(hospitalId, updated);
+        }
+      } catch (_) {}
+    } catch (e) {
+      throw Exception('Failed to update doctor attendance: $e');
+    }
+  }
+
+  /// Watch a specific doctor live
+  Stream<Doctor?> watchDoctor(String hospitalId, String doctorId) {
+    return _database
+        .child(_doctorsPath)
+        .child(hospitalId)
+        .child(doctorId)
+        .onValue
+        .map((event) {
+      if (!event.snapshot.exists || event.snapshot.value == null) return null;
+      final data = Map<String, dynamic>.from(event.snapshot.value as Map);
+      return Doctor.fromJson(data, docId: doctorId);
+    });
+  }
+
+  /// Watch all doctors for a hospital live
+  Stream<List<Doctor>> watchDoctorsByHospital(String hospitalId) {
+    return _database
+        .child(_doctorsPath)
+        .child(hospitalId)
+        .onValue
+        .map((event) {
+      if (!event.snapshot.exists || event.snapshot.value == null) return [];
+      final data = Map<dynamic, dynamic>.from(event.snapshot.value as Map);
+      final list = <Doctor>[];
+      data.forEach((key, val) {
+        if (val is Map) {
+          list.add(Doctor.fromJson(Map<String, dynamic>.from(val), docId: key.toString()));
+        }
+      });
+      return list;
+    });
+  }
+
   /// Delete a doctor
   Future<void> deleteDoctor(String hospitalId, String doctorId) async {
     try {

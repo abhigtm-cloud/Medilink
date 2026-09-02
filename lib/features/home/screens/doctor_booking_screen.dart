@@ -49,7 +49,9 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
   Widget build(BuildContext context) {
     final isSunday = _selectedDate.weekday == 7;
     final dateStr = _getDateString(_selectedDate);
-    final slotsAsync = isSunday
+    final doctorAsync = ref.watch(watchDoctorProvider((widget.hospitalId, widget.doctorId)));
+    final isDoctorAbsent = doctorAsync.valueOrNull?.isAbsent ?? false;
+    final slotsAsync = (isSunday || isDoctorAbsent)
         ? null
         : ref.watch(
             getSlotsByDoctorAndDateProvider(
@@ -317,22 +319,22 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
 
           // Slots View
           Expanded(
-            child: isSunday
+            child: isDoctorAbsent
                 ? Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.event_busy, size: 54, color: AppColors.error.withOpacity(0.8)),
+                          Icon(Icons.person_off, size: 58, color: AppColors.error.withOpacity(0.8)),
                           const SizedBox(height: 14),
                           const Text(
-                            'Hospital Closed on Sunday',
+                            'Doctor is Marked Absent',
                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Doctors do not take appointments on Sundays.\nPlease pick a date from Monday to Saturday above.',
+                            '${widget.doctorName} has marked themselves absent on duty.\nAppointment booking is temporarily disabled.',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
                           ),
@@ -340,7 +342,30 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
                       ),
                     ),
                   )
-                : (slotsAsync?.when(
+                : (isSunday
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.event_busy, size: 54, color: AppColors.error.withOpacity(0.8)),
+                              const SizedBox(height: 14),
+                              const Text(
+                                'Hospital Closed on Sunday',
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Doctors do not take appointments on Sundays.\nPlease pick a date from Monday to Saturday above.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : (slotsAsync?.when(
                       data: (slots) {
                         if (slots.isEmpty) {
                           return Center(
@@ -539,7 +564,7 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16),
         child: ElevatedButton(
-          onPressed: _selectedSlotId == null ? null : _bookSlot,
+          onPressed: (isDoctorAbsent || _selectedSlotId == null) ? null : _bookSlot,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             disabledBackgroundColor: AppColors.borderLight,
@@ -548,9 +573,9 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: const Text(
-            'Book Appointment',
-            style: TextStyle(
+          child: Text(
+            isDoctorAbsent ? 'Doctor is Marked Absent' : 'Book Appointment',
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w600,

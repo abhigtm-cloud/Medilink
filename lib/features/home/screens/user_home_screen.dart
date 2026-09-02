@@ -25,6 +25,7 @@ import 'package:medilink/features/pharmacy/presentation/screens/medicine_search_
 import 'package:medilink/features/pharmacy/presentation/screens/prescription_upload_screen.dart';
 import 'package:medilink/features/ai_assistant/presentation/screens/ai_assistant_screen.dart';
 import 'package:medilink/features/medication_reminders/presentation/screens/medication_reminders_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// User home screen for browsing hospitals and booking appointments
 class UserHomeScreen extends ConsumerStatefulWidget {
@@ -635,15 +636,62 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      hospital.name,
-                      style: TextStyle(
-                        color: AppColors.textPrimaryLight,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            hospital.name,
+                            style: TextStyle(
+                              color: AppColors.textPrimaryLight,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: () async {
+                            final rawPhone = hospital.contact.replaceAll(RegExp(r'[^0-9+]'), '');
+                            final uri = Uri.parse('tel:$rawPhone');
+                            try {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            } catch (_) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Hospital Phone: ${hospital.contact}')),
+                                );
+                              }
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.phone_in_talk, size: 14, color: AppColors.success),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Call',
+                                  style: TextStyle(
+                                    color: AppColors.success,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     // Address

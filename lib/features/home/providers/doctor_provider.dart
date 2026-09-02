@@ -27,6 +27,23 @@ final getDoctorsByHospitalProvider = FutureProvider.family<List<Doctor>, String>
   },
 );
 
+/// Returns real-time stream of doctors for a hospital
+final watchDoctorsByHospitalProvider = StreamProvider.family<List<Doctor>, String>(
+  (ref, hospitalId) {
+    final repo = ref.watch(doctorRepositoryProvider);
+    return repo.watchDoctorsByHospital(hospitalId);
+  },
+);
+
+/// Returns real-time stream of a specific doctor
+final watchDoctorProvider = StreamProvider.family<Doctor?, (String, String)>(
+  (ref, params) {
+    final (hospitalId, doctorId) = params;
+    final repo = ref.watch(doctorRepositoryProvider);
+    return repo.watchDoctor(hospitalId, doctorId);
+  },
+);
+
 /// Returns a specific doctor
 final getDoctorByIdProvider = FutureProvider.family<Doctor?, (String, String)>(
   (ref, params) async {
@@ -95,6 +112,27 @@ class DoctorController extends StateNotifier<AsyncValue<Doctor?>> {
       _read.invalidate(getDoctorsByHospitalProvider(hospitalId));
 
       state = AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  /// Update doctor absent status
+  Future<void> updateDoctorAbsentStatus({
+    required String hospitalId,
+    required String doctorId,
+    required bool isAbsent,
+    String? reason,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repo.updateDoctorAbsentStatus(
+        hospitalId: hospitalId,
+        doctorId: doctorId,
+        isAbsent: isAbsent,
+        reason: reason,
+      );
+      state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }

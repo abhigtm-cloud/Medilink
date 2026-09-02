@@ -8,7 +8,10 @@ class Doctor {
   final String endTime; // Format: "HH:mm" (24-hour)
   final int slotDurationMinutes;
   final String? photoUrl; // Base64 encoded doctor photo (optional)
-  final String? email; // Doctor's email for notifications
+  final String? email; // Doctor's email for notifications and login
+  final bool isAbsent; // Absent / On Leave status
+  final String? absentReason; // Reason for absence (e.g. sick leave, emergency)
+  final String? authUid; // Firebase Auth UID linked to this doctor
   final DateTime? createdAt;
 
   const Doctor({
@@ -21,6 +24,9 @@ class Doctor {
     required this.slotDurationMinutes,
     this.photoUrl,
     this.email,
+    this.isAbsent = false,
+    this.absentReason,
+    this.authUid,
     this.createdAt,
   });
 
@@ -34,6 +40,9 @@ class Doctor {
     int? slotDurationMinutes,
     String? photoUrl,
     String? email,
+    bool? isAbsent,
+    String? absentReason,
+    String? authUid,
     DateTime? createdAt,
   }) {
     return Doctor(
@@ -46,6 +55,9 @@ class Doctor {
       slotDurationMinutes: slotDurationMinutes ?? this.slotDurationMinutes,
       photoUrl: photoUrl ?? this.photoUrl,
       email: email ?? this.email,
+      isAbsent: isAbsent ?? this.isAbsent,
+      absentReason: absentReason ?? this.absentReason,
+      authUid: authUid ?? this.authUid,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -61,6 +73,9 @@ class Doctor {
       slotDurationMinutes: json['slotDurationMinutes'] as int,
       photoUrl: json['photoUrl'] as String?,
       email: json['email'] as String?,
+      isAbsent: json['isAbsent'] as bool? ?? false,
+      absentReason: json['absentReason'] as String?,
+      authUid: json['authUid'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,
@@ -77,6 +92,9 @@ class Doctor {
       'slotDurationMinutes': slotDurationMinutes,
       'photoUrl': photoUrl,
       'email': email,
+      'isAbsent': isAbsent,
+      'absentReason': absentReason,
+      'authUid': authUid,
       'createdAt': createdAt?.toIso8601String(),
     };
   }

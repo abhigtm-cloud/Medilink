@@ -55,15 +55,6 @@ class AuthRepository {
       );
     } on FirebaseAuthException catch (e) {
       print('DEBUG: AuthRepository.signInWithEmailAndPassword - FirebaseAuthException: ${e.code} - ${e.message}');
-      if (e.code == 'user-not-found' || e.code == 'invalid-credential' || e.code == 'INVALID_LOGIN_CREDENTIALS') {
-        try {
-          print('DEBUG: Auto-registering user $email since account was not found');
-          return await registerWithEmailAndPassword(email: email, password: password);
-        } catch (regErr) {
-          print('DEBUG: Auto-registration failed: $regErr');
-          rethrow;
-        }
-      }
       rethrow;
     } catch (e) {
       print('DEBUG: AuthRepository.signInWithEmailAndPassword - Generic error: $e');

@@ -1,22 +1,30 @@
-enum UserRole { hospitalAdmin, normalUser }
+enum UserRole { hospitalAdmin, normalUser, doctor }
 
 extension UserRoleExtension on UserRole {
   bool get isHospitalAdmin => this == UserRole.hospitalAdmin;
   bool get isNormalUser => this == UserRole.normalUser;
+  bool get isDoctor => this == UserRole.doctor;
   
   String get displayName {
     switch (this) {
       case UserRole.hospitalAdmin:
         return 'Hospital Admin';
+      case UserRole.doctor:
+        return 'Doctor';
       case UserRole.normalUser:
-        return 'Normal User';
+        return 'Patient';
     }
   }
 }
 
-/// Returns role based on email domain
-UserRole _getRoleFromEmail(String email) {
+/// Returns role based on email domain or keywords
+UserRole _getRoleFromEmail(String email, {String? explicitRole}) {
+  if (explicitRole == 'doctor') return UserRole.doctor;
+  if (explicitRole == 'hospital_admin') return UserRole.hospitalAdmin;
   final normalizedEmail = email.trim().toLowerCase();
+  if (normalizedEmail.contains('doctor') || normalizedEmail.startsWith('dr.')) {
+    return UserRole.doctor;
+  }
   if (normalizedEmail.endsWith('@hospital.com')) {
     return UserRole.hospitalAdmin;
   }
@@ -124,7 +132,7 @@ class AppUser {
       createdAt: json['createdAt'] != null 
         ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
         : DateTime.now(),
-      role: _getRoleFromEmail(email),
+      role: _getRoleFromEmail(email, explicitRole: json['role'] as String?),
     );
   }
 

@@ -151,13 +151,42 @@ class DoctorListScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                doctor.name,
-                                style: TextStyle(
-                                  color: AppColors.textPrimaryLight,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      doctor.name,
+                                      style: TextStyle(
+                                        color: AppColors.textPrimaryLight,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: doctor.isAbsent
+                                          ? AppColors.error.withOpacity(0.12)
+                                          : AppColors.success.withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: doctor.isAbsent
+                                            ? AppColors.error.withOpacity(0.3)
+                                            : AppColors.success.withOpacity(0.3),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      doctor.isAbsent ? 'Absent' : 'Available',
+                                      style: TextStyle(
+                                        color: doctor.isAbsent ? AppColors.error : AppColors.success,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 4),
                               Text(

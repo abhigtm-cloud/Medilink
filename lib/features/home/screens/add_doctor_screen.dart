@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:medilink/features/home/models/doctor.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
 
@@ -67,8 +70,34 @@ class _AddDoctorScreenState extends ConsumerState<AddDoctorScreen> {
     setState(() => _isSaving = true);
 
     try {
-      // Create doctors
+      // Create doctors with custom credentials
       for (final doctorForm in _doctors) {
+        final email = doctorForm.emailController.text.trim();
+        final password = doctorForm.passwordController.text.trim();
+        String? authUid;
+
+        // Provision Firebase Auth account for doctor using secondary FirebaseApp so current admin session is NOT disrupted
+        try {
+          final appName = 'DocAuth_${DateTime.now().microsecondsSinceEpoch}';
+          final secondaryApp = await Firebase.initializeApp(
+            name: appName,
+            options: Firebase.app().options,
+          );
+          try {
+            final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
+            final userCred = await secondaryAuth.createUserWithEmailAndPassword(
+              email: email,
+              password: password,
+            );
+            authUid = userCred.user?.uid;
+            await userCred.user?.updateDisplayName(doctorForm.nameController.text.trim());
+          } finally {
+            await secondaryApp.delete();
+          }
+        } catch (authErr) {
+          debugPrint('Doctor auth creation note: $authErr');
+        }
+
         final doctor = Doctor(
           hospitalId: widget.hospitalId,
           name: doctorForm.nameController.text.trim(),
@@ -77,9 +106,33 @@ class _AddDoctorScreenState extends ConsumerState<AddDoctorScreen> {
           endTime: doctorForm.endTime,
           slotDurationMinutes: doctorForm.slotDuration,
           photoUrl: doctorForm.photoBase64,
+          email: email,
+          authUid: authUid,
         );
 
-        await ref.read(doctorControllerProvider.notifier).createDoctor(doctor);
+        final createdDoctor = await ref.read(doctorRepositoryProvider).createDoctor(doctor);
+
+        // Store user and staff records in RTDB
+        if (authUid != null) {
+          final db = FirebaseDatabase.instance.ref();
+          await db.child('users').child(authUid).set({
+            'uid': authUid,
+            'email': email,
+            'displayName': doctor.name,
+            'role': 'doctor',
+            'hospitalId': widget.hospitalId,
+            'doctorId': createdDoctor.id,
+            'createdAt': DateTime.now().toIso8601String(),
+          });
+
+          await db.child('staff').child(widget.hospitalId).child(authUid).set({
+            'email': email,
+            'role': 'doctor',
+            'name': doctor.name,
+            'doctorId': createdDoctor.id,
+            'assignedAt': DateTime.now().toIso8601String(),
+          });
+        }
         if (!mounted) return;
       }
 
@@ -247,6 +300,8 @@ class _AddDoctorScreenState extends ConsumerState<AddDoctorScreen> {
 class DoctorFormData {
   final nameController = TextEditingController();
   final specializationController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
   String startTime = '09:00';
   String endTime = '17:00';
   int slotDuration = 30;
@@ -254,13 +309,17 @@ class DoctorFormData {
   File? photoFile; // Temporary file reference
 
   bool validate() {
-    return nameController.text.isNotEmpty &&
-        specializationController.text.isNotEmpty;
+    return nameController.text.trim().isNotEmpty &&
+        specializationController.text.trim().isNotEmpty &&
+        emailController.text.trim().isNotEmpty &&
+        passwordController.text.trim().length >= 6;
   }
 
   void dispose() {
     nameController.dispose();
     specializationController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
   }
 }
 
@@ -279,6 +338,8 @@ class _DoctorFormWidget extends StatefulWidget {
 }
 
 class _DoctorFormWidgetState extends State<_DoctorFormWidget> {
+  bool _obscurePassword = true;
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -310,14 +371,41 @@ class _DoctorFormWidgetState extends State<_DoctorFormWidget> {
               decoration: const InputDecoration(
                 labelText: 'Doctor Name',
                 border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.person),
               ),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: widget.doctorForm.specializationController,
               decoration: const InputDecoration(
-                labelText: 'Specialization',
+                labelText: 'Specialization (e.g. Cardiologist)',
                 border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.medical_services_outlined),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: widget.doctorForm.emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Doctor Login Email',
+                hintText: 'e.g. dr.smith@medilink.com',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: widget.doctorForm.passwordController,
+              obscureText: _obscurePassword,
+              decoration: InputDecoration(
+                labelText: 'Assign Password (min 6 characters)',
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.lock_outline),
+                suffixIcon: IconButton(
+                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                ),
               ),
             ),
             const SizedBox(height: 12),

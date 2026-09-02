@@ -6,13 +6,10 @@ import 'package:medilink/features/auth/models/app_user.dart';
 import 'package:medilink/features/home/screens/admin_dashboard_screen.dart';
 import 'package:medilink/features/home/screens/user_home_screen.dart';
 import 'package:medilink/features/ambulance/presentation/screens/ambulance_driver_home_screen.dart';
+import 'package:medilink/features/home/screens/doctor_home_screen.dart';
 import 'package:medilink/features/auth/screens/login_screen.dart';
 
-/// Role-based home screen that routes to admin, ambulance-driver, or user
-/// home. Only `hospital_admin` (old email-domain convention) and
-/// `ambulance_driver` (new custom-claim RBAC) have dedicated shells so far —
-/// doctor/pharmacy/emergency_staff land on UserHomeScreen for now, same as
-/// any patient, since they have no dedicated screens yet.
+/// Role-based home screen that routes to admin, ambulance-driver, doctor, or user home.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -40,6 +37,10 @@ class HomeScreen extends ConsumerWidget {
 
         if (appRoleAsync.valueOrNull == AppRole.ambulanceDriver) {
           return const AmbulanceDriverHomeScreen();
+        }
+
+        if (user.role.isDoctor || appRoleAsync.valueOrNull == AppRole.doctor) {
+          return const DoctorHomeScreen();
         }
 
         // Route based on role
