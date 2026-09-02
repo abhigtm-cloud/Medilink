@@ -6,6 +6,7 @@ import 'package:medilink/core/theme/app_theme.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';
 import 'package:medilink/features/home/screens/add_doctor_screen.dart';
+import 'package:medilink/features/home/screens/manage_doctor_slots_screen.dart';
 
 class HospitalDetailScreen extends ConsumerWidget {
   final String hospitalId;
@@ -237,49 +238,74 @@ class HospitalDetailScreen extends ConsumerWidget {
                                       ],
                                     ),
                                   ),
-                                  PopupMenuButton(
-                                    itemBuilder: (context) => [
-                                      PopupMenuItem(
-                                        child: const Text('Delete'),
-                                        onTap: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) => AlertDialog(
-                                              title: const Text('Delete Doctor'),
-                                              content: Text(
-                                                'Are you sure you want to delete ${doctor.name}? All related slots and bookings will be deleted.',
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(context),
-                                                  child: const Text('Cancel'),
-                                                ),
-                                                ElevatedButton(
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor: AppColors.error,
-                                                  ),
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                    ref
-                                                        .read(doctorControllerProvider.notifier)
-                                                        .deleteDoctor(hospitalId, doctor.id!);
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text('Doctor deleted successfully'),
-                                                      ),
-                                                    );
-                                                  },
-                                                  child: const Text('Delete'),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                                   PopupMenuButton(
+                                     itemBuilder: (context) => [
+                                       PopupMenuItem(
+                                         child: const Row(
+                                           children: [
+                                             Icon(Icons.edit_calendar, size: 18, color: AppColors.primary),
+                                             SizedBox(width: 8),
+                                             Text('Manage Slots & Hours'),
+                                           ],
+                                         ),
+                                         onTap: () {
+                                           Future.microtask(() {
+                                             Navigator.push(
+                                               context,
+                                               MaterialPageRoute(
+                                                 builder: (_) => ManageDoctorSlotsScreen(doctor: doctor),
+                                               ),
+                                             );
+                                           });
+                                         },
+                                       ),
+                                       PopupMenuItem(
+                                         child: const Row(
+                                           children: [
+                                             Icon(Icons.delete, size: 18, color: AppColors.error),
+                                             SizedBox(width: 8),
+                                             Text('Delete Doctor'),
+                                           ],
+                                         ),
+                                         onTap: () {
+                                           showDialog(
+                                             context: context,
+                                             builder: (context) => AlertDialog(
+                                               title: const Text('Delete Doctor'),
+                                               content: Text(
+                                                 'Are you sure you want to delete ${doctor.name}? All related slots and bookings will be deleted.',
+                                               ),
+                                               actions: [
+                                                 TextButton(
+                                                   onPressed: () => Navigator.pop(context),
+                                                   child: const Text('Cancel'),
+                                                 ),
+                                                 ElevatedButton(
+                                                   style: ElevatedButton.styleFrom(
+                                                     backgroundColor: AppColors.error,
+                                                   ),
+                                                   onPressed: () {
+                                                     Navigator.pop(context);
+                                                     ref
+                                                         .read(doctorControllerProvider.notifier)
+                                                         .deleteDoctor(hospitalId, doctor.id!);
+                                                     ScaffoldMessenger.of(context).showSnackBar(
+                                                       const SnackBar(
+                                                         content: Text('Doctor deleted successfully'),
+                                                       ),
+                                                     );
+                                                   },
+                                                   child: const Text('Delete'),
+                                                 ),
+                                               ],
+                                             ),
+                                           );
+                                         },
+                                       ),
+                                     ],
+                                   ),
+                                 ],
+                               ),
                               const SizedBox(height: 8),
                               Row(
                                 children: [

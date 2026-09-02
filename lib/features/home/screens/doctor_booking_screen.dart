@@ -35,6 +35,10 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
   void initState() {
     super.initState();
     _selectedDate = DateTime.now();
+    // If today is Sunday, automatically advance to Monday
+    if (_selectedDate.weekday == 7) {
+      _selectedDate = _selectedDate.add(const Duration(days: 1));
+    }
   }
 
   String _getDateString(DateTime date) {
@@ -43,11 +47,15 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final slotsAsync = ref.watch(
-      getSlotsByDoctorAndDateProvider(
-        (widget.hospitalId, widget.doctorId, _getDateString(_selectedDate)),
-      ),
-    );
+    final isSunday = _selectedDate.weekday == 7;
+    final dateStr = _getDateString(_selectedDate);
+    final slotsAsync = isSunday
+        ? null
+        : ref.watch(
+            getSlotsByDoctorAndDateProvider(
+              (widget.hospitalId, widget.doctorId, dateStr),
+            ),
+          );
 
     return Scaffold(
       backgroundColor: AppColors.surfaceLight,
@@ -125,73 +133,174 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
       ),
       body: Column(
         children: [
-          // Date Picker
+          // Doctor & Legend Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            color: AppColors.cardLight,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: AppColors.primary.withOpacity(0.12),
+                  radius: 20,
+                  child: Icon(Icons.medical_services, color: AppColors.primary, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Select an Appointment Slot',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: AppColors.textPrimaryLight,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppColors.success,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Text('Available', style: TextStyle(fontSize: 11, color: AppColors.success)),
+                          const SizedBox(width: 12),
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppColors.error,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Text('Doctor Busy', style: TextStyle(fontSize: 11, color: AppColors.error)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+
+          // Date Selector (Next 21 Days Rolling)
           Container(
             padding: const EdgeInsets.all(16),
             color: AppColors.cardLight,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Select Date',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimaryLight,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Choose Date',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: AppColors.textPrimaryLight,
+                      ),
+                    ),
+                    const Text(
+                      'Mon - Sat (Sundays Closed)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
-                  height: 100,
+                  height: 86,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    itemCount: 7,
+                    itemCount: 21,
                     itemBuilder: (context, index) {
                       final date = DateTime.now().add(Duration(days: index));
-                      final isSelected = _getDateString(date) ==
-                          _getDateString(_selectedDate);
+                      final dateFormatted = _getDateString(date);
+                      final isSelected = dateFormatted == dateStr;
+                      final isSun = date.weekday == 7;
 
                       return GestureDetector(
                         onTap: () {
+                          if (isSun) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('🏥 Hospital & OPD are closed on Sundays. Please choose Mon - Sat.'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                            return;
+                          }
                           setState(() {
                             _selectedDate = date;
                             _selectedSlotId = null;
                           });
                         },
                         child: Container(
-                          width: 80,
-                          margin: const EdgeInsets.only(right: 12),
+                          width: 72,
+                          margin: const EdgeInsets.only(right: 10),
                           decoration: BoxDecoration(
                             border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : AppColors.borderLight,
-                              width: 2,
+                              color: isSun
+                                  ? AppColors.borderLight
+                                  : (isSelected
+                                      ? AppColors.primary
+                                      : AppColors.borderLight),
+                              width: isSelected ? 2 : 1,
                             ),
-                            borderRadius: BorderRadius.circular(12),
-                            color: isSelected
-                                ? AppColors.primary.withOpacity(0.1)
-                                : AppColors.surfaceLight,
+                            borderRadius: BorderRadius.circular(14),
+                            color: isSun
+                                ? AppColors.surfaceLight.withOpacity(0.5)
+                                : (isSelected
+                                    ? AppColors.primary.withOpacity(0.12)
+                                    : AppColors.surfaceLight),
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                date.day.toString(),
+                                ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][date.weekday - 1],
                                 style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : AppColors.textPrimaryLight,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSun
+                                      ? AppColors.error
+                                      : (isSelected
+                                          ? AppColors.primary
+                                          : AppColors.textSecondaryLight),
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                                    [date.weekday - 1],
+                                date.day.toString(),
                                 style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondaryLight,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: isSun
+                                      ? AppColors.textSecondaryLight
+                                      : (isSelected
+                                          ? AppColors.primary
+                                          : AppColors.textPrimaryLight),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                isSun ? 'Closed' : '${date.month}/${date.day}',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: isSun ? FontWeight.bold : FontWeight.normal,
+                                  color: isSun ? AppColors.error : AppColors.textSecondaryLight,
                                 ),
                               ),
                             ],
@@ -204,132 +313,226 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
               ],
             ),
           ),
-          Divider(color: AppColors.borderLight),
+          const Divider(height: 1),
 
-          // Slots
+          // Slots View
           Expanded(
-            child: slotsAsync.when(
-              data: (slots) {
-                if (slots.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.schedule_outlined, size: 48, color: AppColors.borderLight),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No slots available for this date',
-                          style: TextStyle(
-                            color: AppColors.textSecondaryLight,
-                            fontSize: 14,
+            child: isSunday
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.event_busy, size: 54, color: AppColors.error.withOpacity(0.8)),
+                          const SizedBox(height: 14),
+                          const Text(
+                            'Hospital Closed on Sunday',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Text(
+                            'Doctors do not take appointments on Sundays.\nPlease pick a date from Monday to Saturday above.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
+                          ),
+                        ],
+                      ),
                     ),
-                  );
-                }
-
-                return GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: slots.length,
-                  itemBuilder: (context, index) {
-                    final slot = slots[index];
-                    final isSelected = _selectedSlotId == slot.id;
-                    final isBooked = !slot.isAvailable;
-
-                    return GestureDetector(
-                      onTap: isBooked
-                          ? null
-                          : () {
-                              setState(() {
-                                _selectedSlotId = slot.id;
-                              });
-                            },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary
-                                : (isBooked
-                                    ? AppColors.error
-                                    : AppColors.borderLight),
-                            width: 2,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          color: isBooked
-                              ? AppColors.error.withOpacity(0.1)
-                              : (isSelected
-                                  ? AppColors.primary.withOpacity(0.1)
-                                  : AppColors.surfaceLight),
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                slot.time,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: isBooked
-                                      ? AppColors.error
-                                      : AppColors.textPrimaryLight,
+                  )
+                : (slotsAsync?.when(
+                      data: (slots) {
+                        if (slots.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.schedule_outlined, size: 48, color: AppColors.borderLight),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'No slots scheduled for this date',
+                                  style: TextStyle(
+                                    color: AppColors.textSecondaryLight,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                                textAlign: TextAlign.center,
+                              ],
+                            ),
+                          );
+                        }
+
+                        final availableCount = slots.where((s) => s.isAvailable).length;
+                        final busyCount = slots.length - availableCount;
+
+                        return Column(
+                          children: [
+                            // Availability Counter bar
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '$availableCount Available Slots',
+                                    style: const TextStyle(
+                                      color: AppColors.success,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  if (busyCount > 0)
+                                    Text(
+                                      '$busyCount Doctor Busy',
+                                      style: const TextStyle(
+                                        color: AppColors.error,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                isBooked ? 'Booked' : 'Available',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isBooked
-                                      ? AppColors.error
-                                      : AppColors.success,
+                            ),
+                            Expanded(
+                              child: GridView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 2.2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
                                 ),
+                                itemCount: slots.length,
+                                itemBuilder: (context, index) {
+                                  final slot = slots[index];
+                                  final isSelected = _selectedSlotId == slot.id;
+                                  final isBooked = !slot.isAvailable;
+
+                                  return GestureDetector(
+                                    onTap: isBooked
+                                        ? () {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('⚠️ Doctor is busy / already booked at this time. Please select another slot.'),
+                                                duration: Duration(seconds: 1),
+                                              ),
+                                            );
+                                          }
+                                        : () {
+                                            setState(() {
+                                              _selectedSlotId = slot.id;
+                                            });
+                                          },
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: isBooked
+                                              ? AppColors.error.withOpacity(0.4)
+                                              : (isSelected
+                                                  ? AppColors.primary
+                                                  : AppColors.borderLight),
+                                          width: isSelected ? 2 : 1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(14),
+                                        color: isBooked
+                                            ? AppColors.error.withOpacity(0.06)
+                                            : (isSelected
+                                                ? AppColors.primary.withOpacity(0.12)
+                                                : AppColors.cardLight),
+                                        boxShadow: isSelected
+                                            ? [
+                                                BoxShadow(
+                                                  color: AppColors.primary.withOpacity(0.15),
+                                                  blurRadius: 6,
+                                                  offset: const Offset(0, 2),
+                                                )
+                                              ]
+                                            : null,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            isBooked
+                                                ? Icons.do_not_disturb_on
+                                                : (isSelected
+                                                    ? Icons.check_circle
+                                                    : Icons.access_time),
+                                            size: 20,
+                                            color: isBooked
+                                                ? AppColors.error
+                                                : (isSelected
+                                                    ? AppColors.primary
+                                                    : AppColors.textSecondaryLight),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  slot.time,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 13,
+                                                    color: isBooked
+                                                        ? AppColors.error
+                                                        : AppColors.textPrimaryLight,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(
+                                                      horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: isBooked
+                                                        ? AppColors.error.withOpacity(0.15)
+                                                        : AppColors.success.withOpacity(0.15),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: Text(
+                                                    isBooked ? 'Doctor Busy' : 'Available',
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: isBooked
+                                                          ? AppColors.error
+                                                          : AppColors.success,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
+                        );
+                      },
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      error: (error, st) => Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Error loading slots: $error',
+                              style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12),
+                            ),
+                          ],
                         ),
                       ),
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              error: (error, st) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline, size: 48, color: AppColors.error),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Error loading slots',
-                      style: TextStyle(
-                        color: AppColors.textPrimaryLight,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Error: $error',
-                      style: TextStyle(
-                        color: AppColors.textSecondaryLight,
-                        fontSize: 12,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                    ) ??
+                    const SizedBox.shrink()),
           ),
         ],
       ),

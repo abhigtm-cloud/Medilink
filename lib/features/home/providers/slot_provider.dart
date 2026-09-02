@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:medilink/features/home/models/doctor.dart';
 import 'package:medilink/features/home/models/slot.dart';
 import 'package:medilink/features/home/repositories/slot_repository.dart';
 
@@ -7,12 +8,12 @@ final slotRepositoryProvider = Provider<SlotRepository>((ref) {
   return SlotRepository();
 });
 
-/// Returns slots for a doctor on a specific date
-final getSlotsByDoctorAndDateProvider = FutureProvider.family<List<Slot>, (String, String, String)>(
-  (ref, params) async {
+/// Returns real-time stream of slots for a doctor on a specific date (live updates!)
+final getSlotsByDoctorAndDateProvider = StreamProvider.family<List<Slot>, (String, String, String)>(
+  (ref, params) {
     final (hospitalId, doctorId, date) = params;
     final repo = ref.watch(slotRepositoryProvider);
-    return repo.getSlotsByDoctorAndDate(hospitalId, doctorId, date);
+    return repo.watchSlotsByDoctorAndDate(hospitalId, doctorId, date);
   },
 );
 
@@ -44,6 +45,76 @@ class SlotController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       await _repo.bookSlot(slotId, hospitalId, doctorId, date, userId);
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> deleteSlot({
+    required String hospitalId,
+    required String doctorId,
+    required String date,
+    required String slotId,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repo.deleteSlot(
+        hospitalId: hospitalId,
+        doctorId: doctorId,
+        date: date,
+        slotId: slotId,
+      );
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> deleteSlotsForDate({
+    required String hospitalId,
+    required String doctorId,
+    required String date,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repo.deleteSlotsForDate(
+        hospitalId: hospitalId,
+        doctorId: doctorId,
+        date: date,
+      );
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> toggleSlotBusy({
+    required String hospitalId,
+    required String doctorId,
+    required String date,
+    required String slotId,
+    required bool markBusy,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repo.toggleSlotBusy(
+        hospitalId: hospitalId,
+        doctorId: doctorId,
+        date: date,
+        slotId: slotId,
+        markBusy: markBusy,
+      );
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> regenerateDateSlots(Doctor doctor, String dateStr) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repo.regenerateDateSlots(doctor, dateStr);
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
