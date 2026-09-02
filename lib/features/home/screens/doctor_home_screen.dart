@@ -436,7 +436,7 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen>
               name: 'Patient #${booking.userId.substring(0, booking.userId.length > 5 ? 5 : booking.userId.length)}',
               time: booking.time,
               date: booking.date,
-              status: booking.status,
+              status: booking.status.name,
               bookingId: booking.id,
             );
           },

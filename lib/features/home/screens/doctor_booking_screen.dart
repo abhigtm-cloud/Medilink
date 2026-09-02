@@ -348,6 +348,8 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
         ),
       ),
     );
+  }
+
   Widget _buildSlotsBody(bool isDoctorAbsent, bool isSunday, AsyncValue<List<Slot>>? slotsAsync) {
     if (isDoctorAbsent) {
       return Center(

@@ -198,7 +198,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
         '   • DO NOT pop blisters; they act as a natural barrier against bacterial infection.\n\n'
         '⚠️ Red Flags:\n'
         '• Burns larger than 3 inches, or on face, hands, joints, or groin.\n'
-        '• Charred, white, or deep skin loss (Third-degree) $\rightarrow$ Call 108 Emergency SOS.\n\n'
+        '• Charred, white, or deep skin loss (Third-degree) -> Call 108 Emergency SOS.\n\n'
         '👨‍⚕️ Consult: Emergency Medicine / General Surgeon.',
         false,
       );
