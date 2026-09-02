@@ -183,8 +183,12 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
       );
     }
 
-    // 4. Burns & Scalds
-    if (q.contains('burn') || q.contains('scald') || q.contains('hot water')) {
+    // 4. Burns & Scalds (exclude 'burning sensation' / 'heartburn')
+    if ((q.contains('burn') && !q.contains('burning') && !q.contains('heartburn')) ||
+        q.contains('scald') ||
+        q.contains('hot water') ||
+        q.contains('skin burn') ||
+        q.contains('fire burn')) {
       return (
         '🩹 First-Aid for Minor Burns (First Degree / Scalds):\n\n'
         '1. Cool Water Immediately:\n'
