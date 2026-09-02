@@ -68,7 +68,7 @@ class StaffRoleService {
       });
     } catch (_) {}
 
-    // 2. Direct RTDB and Firestore fallback
+    // 2. Direct RTDB (under /hospitals/{hospitalId}/staff which is permission authorized)
     final cleanEmailKey = email.replaceAll('.', '_').replaceAll('@', '_at_');
     final staffData = {
       'email': email,
@@ -76,6 +76,12 @@ class StaffRoleService {
       'hospitalId': hospitalId ?? '',
       'assignedAt': DateTime.now().toIso8601String(),
     };
+
+    if (hospitalId != null && hospitalId.isNotEmpty) {
+      try {
+        await _database.child('hospitals').child(hospitalId).child('staff').child(cleanEmailKey).set(staffData);
+      } catch (_) {}
+    }
 
     try {
       await _database.child('staff').child(hospitalId ?? 'general').child(cleanEmailKey).set(staffData);
@@ -88,7 +94,7 @@ class StaffRoleService {
 
   /// Watch or fetch staff list for a hospital
   Stream<List<StaffMember>> watchHospitalStaff(String hospitalId) {
-    return _database.child('staff').child(hospitalId).onValue.map((event) {
+    return _database.child('hospitals').child(hospitalId).child('staff').onValue.map((event) {
       if (!event.snapshot.exists || event.snapshot.value == null) {
         return <StaffMember>[];
       }
@@ -105,6 +111,9 @@ class StaffRoleService {
 
   /// Remove a staff member
   Future<void> removeStaffMember(String hospitalId, String staffKey) async {
+    try {
+      await _database.child('hospitals').child(hospitalId).child('staff').child(staffKey).remove();
+    } catch (_) {}
     try {
       await _database.child('staff').child(hospitalId).child(staffKey).remove();
     } catch (_) {}

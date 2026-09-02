@@ -52,6 +52,32 @@ class Medicine {
         'isActive': isActive,
         'updatedAt': FieldValue.serverTimestamp(),
       };
+
+  factory Medicine.fromJson(Map<dynamic, dynamic> data, String id, String hospitalId) {
+    return Medicine(
+      id: id,
+      hospitalId: hospitalId,
+      name: data['name'] as String? ?? '',
+      genericName: data['genericName'] as String?,
+      manufacturer: data['manufacturer'] as String?,
+      category: data['category'] as String?,
+      unitPrice: (data['unitPrice'] as num? ?? data['price'] as num?)?.toDouble() ?? 0,
+      stockQuantity: (data['stockQuantity'] as num? ?? data['stock'] as num?)?.toInt() ?? 0,
+      requiresPrescription: data['requiresPrescription'] as bool? ?? false,
+      isActive: data['isActive'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'genericName': genericName,
+        'manufacturer': manufacturer,
+        'category': category,
+        'unitPrice': unitPrice,
+        'stockQuantity': stockQuantity,
+        'requiresPrescription': requiresPrescription,
+        'isActive': isActive,
+      };
 }
 
 enum PrescriptionStatus {
@@ -124,6 +150,27 @@ class Prescription {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
     );
   }
+
+  factory Prescription.fromJson(Map<dynamic, dynamic> data, String id) {
+    return Prescription(
+      id: id,
+      patientUid: data['patientUid'] as String? ?? '',
+      hospitalId: data['hospitalId'] as String?,
+      imageUrl: data['imageUrl'] as String? ?? '',
+      status: PrescriptionStatus.fromValue(data['status'] as String?),
+      reviewNote: data['reviewNote'] as String?,
+      createdAt: data['createdAt'] != null ? DateTime.tryParse(data['createdAt'].toString()) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'patientUid': patientUid,
+        'hospitalId': hospitalId,
+        'imageUrl': imageUrl,
+        'status': status.value,
+        'reviewNote': reviewNote,
+        'createdAt': createdAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      };
 }
 
 class PharmacyOrderItem {
@@ -256,6 +303,37 @@ class PharmacyOrder {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
     );
   }
+
+  factory PharmacyOrder.fromJson(Map<dynamic, dynamic> data, String id) {
+    final rawItems = data['items'] as List?;
+    return PharmacyOrder(
+      id: id,
+      patientUid: data['patientUid'] as String? ?? '',
+      hospitalId: data['hospitalId'] as String? ?? '',
+      prescriptionId: data['prescriptionId'] as String?,
+      items: rawItems != null
+          ? rawItems
+              .whereType<Map>()
+              .map((e) => PharmacyOrderItem.fromJson(e.cast<String, dynamic>()))
+              .toList()
+          : const [],
+      totalAmount: (data['totalAmount'] as num?)?.toDouble() ?? 0,
+      status: PharmacyOrderStatus.fromValue(data['status'] as String?),
+      deliveryAddress: data['deliveryAddress'] as String? ?? '',
+      createdAt: data['createdAt'] != null ? DateTime.tryParse(data['createdAt'].toString()) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'patientUid': patientUid,
+        'hospitalId': hospitalId,
+        'prescriptionId': prescriptionId,
+        'items': items.map((i) => i.toJson()).toList(),
+        'totalAmount': totalAmount,
+        'status': status.value,
+        'deliveryAddress': deliveryAddress,
+        'createdAt': createdAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      };
 }
 
 class OrderTrackingEvent {

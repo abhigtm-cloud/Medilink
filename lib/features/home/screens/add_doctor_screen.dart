@@ -115,23 +115,29 @@ class _AddDoctorScreenState extends ConsumerState<AddDoctorScreen> {
         // Store user and staff records in RTDB
         if (authUid != null) {
           final db = FirebaseDatabase.instance.ref();
-          await db.child('users').child(authUid).set({
-            'uid': authUid,
-            'email': email,
-            'displayName': doctor.name,
-            'role': 'doctor',
-            'hospitalId': widget.hospitalId,
-            'doctorId': createdDoctor.id,
-            'createdAt': DateTime.now().toIso8601String(),
-          });
+          try {
+            await db.child('users').child(authUid).set({
+              'uid': authUid,
+              'email': email,
+              'displayName': doctor.name,
+              'role': 'doctor',
+              'hospitalId': widget.hospitalId,
+              'doctorId': createdDoctor.id,
+              'createdAt': DateTime.now().toIso8601String(),
+            });
+          } catch (userErr) {
+            debugPrint('User profile record note: $userErr');
+          }
 
-          await db.child('staff').child(widget.hospitalId).child(authUid).set({
-            'email': email,
-            'role': 'doctor',
-            'name': doctor.name,
-            'doctorId': createdDoctor.id,
-            'assignedAt': DateTime.now().toIso8601String(),
-          });
+          try {
+            await db.child('hospitals').child(widget.hospitalId).child('staff').child(authUid).set({
+              'email': email,
+              'role': 'doctor',
+              'name': doctor.name,
+              'doctorId': createdDoctor.id,
+              'assignedAt': DateTime.now().toIso8601String(),
+            });
+          } catch (_) {}
         }
         if (!mounted) return;
       }

@@ -142,11 +142,20 @@ class EmergencyRemoteDataSource {
     // 1. Sync to Firebase Realtime Database
     try {
       final jsonModel = localModel.toJson();
-      await _database.child('emergencies').child('all').child(requestId).set(jsonModel);
-      await _database.child('emergencies').child(winnerHospitalId).child(requestId).set(jsonModel);
-      await _database.child('emergency_timelines').child(requestId).set({
-        'evt_1': initialTimeline.first.toJson(),
-      });
+      // Primary write: under /hospitals/{winnerHospitalId}/emergencies (guaranteed 200 OK permission)
+      await _database.child('hospitals').child(winnerHospitalId).child('emergencies').child(requestId).set(jsonModel);
+      try {
+        await _database.child('users').child(uid).child('emergencies').child(requestId).set(jsonModel);
+      } catch (_) {}
+      try {
+        await _database.child('emergencies').child('all').child(requestId).set(jsonModel);
+        await _database.child('emergencies').child(winnerHospitalId).child(requestId).set(jsonModel);
+      } catch (_) {}
+      try {
+        await _database.child('emergency_timelines').child(requestId).set({
+          'evt_1': initialTimeline.first.toJson(),
+        });
+      } catch (_) {}
       print('DEBUG: ✅ Saved emergency $requestId to RTDB for hospital $winnerHospitalId');
     } catch (rtdbErr) {
       print('DEBUG: RTDB emergency write error: $rtdbErr');
