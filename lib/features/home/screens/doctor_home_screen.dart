@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:medilink/core/theme/app_colors.dart';
 import 'package:medilink/core/theme/app_theme.dart';
-import 'package:medilink/features/auth/providers/auth_providers.dart';
+import 'package:medilink/features/auth/providers/auth_providers.dart' hide doctorRepositoryProvider;
 import 'package:medilink/features/home/models/doctor.dart';
 import 'package:medilink/features/home/models/booking.dart';
 import 'package:medilink/features/home/providers/doctor_provider.dart';

@@ -63,8 +63,6 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
       _localMessages.add(
         ChatMessage(
           id: 'user_${DateTime.now().millisecondsSinceEpoch}',
-          chatId: _chatId ?? 'local',
-          senderId: uid,
           role: ChatRole.user,
           content: text,
           capability: _capability,
@@ -86,8 +84,6 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
         _localMessages.add(
           ChatMessage(
             id: 'ai_${DateTime.now().millisecondsSinceEpoch}',
-            chatId: _chatId ?? 'local',
-            senderId: 'medilink_ai_assistant',
             role: ChatRole.assistant,
             content: adviceText,
             capability: _capability,

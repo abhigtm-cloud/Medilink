@@ -32,6 +32,16 @@ final getBookingsByHospitalProvider =
   return repo.watchBookingsByHospital(hospitalId);
 });
 
+/// Returns real-time stream of all bookings for a specific doctor
+final watchBookingsByDoctorProvider =
+    StreamProvider.family<List<Booking>, (String, String)>((ref, params) {
+  final repo = ref.watch(bookingRepositoryProvider);
+  final (hospitalId, doctorId) = params;
+  return repo.watchBookingsByHospital(hospitalId).map(
+        (bookings) => bookings.where((b) => b.doctorId == doctorId).toList(),
+      );
+});
+
 /// Returns total bookings count for a specific doctor
 final getDoctorBookingsCountProvider =
     FutureProvider.family<int, (String, String)>((ref, params) async {

@@ -138,6 +138,18 @@ class DoctorController extends StateNotifier<AsyncValue<Doctor?>> {
     }
   }
   
+  /// Update a doctor's details
+  Future<void> updateDoctor(Doctor doctor) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repo.updateDoctor(doctor);
+      _read.invalidate(getDoctorsByHospitalProvider(doctor.hospitalId));
+      state = AsyncValue.data(doctor);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
   void clearError() {
     if (state.hasError) state = const AsyncValue.data(null);
   }

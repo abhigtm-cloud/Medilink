@@ -7,6 +7,8 @@ import 'package:medilink/features/home/models/booking.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
 import 'package:medilink/core/services/location_service.dart';
 import 'package:medilink/features/home/providers/hospital_provider.dart';
+import 'package:medilink/features/home/providers/doctor_provider.dart';
+import 'package:medilink/features/home/models/slot.dart';
 
 class DoctorBookingScreen extends ConsumerStatefulWidget {
   final String hospitalId;
@@ -319,245 +321,7 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
 
           // Slots View
           Expanded(
-            child: isDoctorAbsent
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.person_off, size: 58, color: AppColors.error.withOpacity(0.8)),
-                          const SizedBox(height: 14),
-                          const Text(
-                            'Doctor is Marked Absent',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${widget.doctorName} has marked themselves absent on duty.\nAppointment booking is temporarily disabled.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : (isSunday
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.event_busy, size: 54, color: AppColors.error.withOpacity(0.8)),
-                              const SizedBox(height: 14),
-                              const Text(
-                                'Hospital Closed on Sunday',
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Doctors do not take appointments on Sundays.\nPlease pick a date from Monday to Saturday above.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : (slotsAsync?.when(
-                      data: (slots) {
-                        if (slots.isEmpty) {
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.schedule_outlined, size: 48, color: AppColors.borderLight),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'No slots scheduled for this date',
-                                  style: TextStyle(
-                                    color: AppColors.textSecondaryLight,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-
-                        final availableCount = slots.where((s) => s.isAvailable).length;
-                        final busyCount = slots.length - availableCount;
-
-                        return Column(
-                          children: [
-                            // Availability Counter bar
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '$availableCount Available Slots',
-                                    style: const TextStyle(
-                                      color: AppColors.success,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  if (busyCount > 0)
-                                    Text(
-                                      '$busyCount Doctor Busy',
-                                      style: const TextStyle(
-                                        color: AppColors.error,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: GridView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  childAspectRatio: 2.2,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
-                                ),
-                                itemCount: slots.length,
-                                itemBuilder: (context, index) {
-                                  final slot = slots[index];
-                                  final isSelected = _selectedSlotId == slot.id;
-                                  final isBooked = !slot.isAvailable;
-
-                                  return GestureDetector(
-                                    onTap: isBooked
-                                        ? () {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('⚠️ Doctor is busy / already booked at this time. Please select another slot.'),
-                                                duration: Duration(seconds: 1),
-                                              ),
-                                            );
-                                          }
-                                        : () {
-                                            setState(() {
-                                              _selectedSlotId = slot.id;
-                                            });
-                                          },
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: isBooked
-                                              ? AppColors.error.withOpacity(0.4)
-                                              : (isSelected
-                                                  ? AppColors.primary
-                                                  : AppColors.borderLight),
-                                          width: isSelected ? 2 : 1,
-                                        ),
-                                        borderRadius: BorderRadius.circular(14),
-                                        color: isBooked
-                                            ? AppColors.error.withOpacity(0.06)
-                                            : (isSelected
-                                                ? AppColors.primary.withOpacity(0.12)
-                                                : AppColors.cardLight),
-                                        boxShadow: isSelected
-                                            ? [
-                                                BoxShadow(
-                                                  color: AppColors.primary.withOpacity(0.15),
-                                                  blurRadius: 6,
-                                                  offset: const Offset(0, 2),
-                                                )
-                                              ]
-                                            : null,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            isBooked
-                                                ? Icons.do_not_disturb_on
-                                                : (isSelected
-                                                    ? Icons.check_circle
-                                                    : Icons.access_time),
-                                            size: 20,
-                                            color: isBooked
-                                                ? AppColors.error
-                                                : (isSelected
-                                                    ? AppColors.primary
-                                                    : AppColors.textSecondaryLight),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                Text(
-                                                  slot.time,
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 13,
-                                                    color: isBooked
-                                                        ? AppColors.error
-                                                        : AppColors.textPrimaryLight,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 2),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(
-                                                      horizontal: 6, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: isBooked
-                                                        ? AppColors.error.withOpacity(0.15)
-                                                        : AppColors.success.withOpacity(0.15),
-                                                    borderRadius: BorderRadius.circular(4),
-                                                  ),
-                                                  child: Text(
-                                                    isBooked ? 'Doctor Busy' : 'Available',
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: isBooked
-                                                          ? AppColors.error
-                                                          : AppColors.success,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                      loading: () => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                      error: (error, st) => Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline, size: 48, color: AppColors.error),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Error loading slots: $error',
-                              style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ) ??
-                    const SizedBox.shrink()),
+            child: _buildSlotsBody(isDoctorAbsent, isSunday, slotsAsync),
           ),
         ],
       ),
@@ -581,6 +345,250 @@ class _DoctorBookingScreenState extends ConsumerState<DoctorBookingScreen> {
               fontWeight: FontWeight.w600,
             ),
           ),
+        ),
+      ),
+    );
+  Widget _buildSlotsBody(bool isDoctorAbsent, bool isSunday, AsyncValue<List<Slot>>? slotsAsync) {
+    if (isDoctorAbsent) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.person_off, size: 58, color: AppColors.error.withOpacity(0.8)),
+              const SizedBox(height: 14),
+              const Text(
+                'Doctor is Marked Absent',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${widget.doctorName} has marked themselves absent on duty.\nAppointment booking is temporarily disabled.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (isSunday) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.event_busy, size: 54, color: AppColors.error.withOpacity(0.8)),
+              const SizedBox(height: 14),
+              const Text(
+                'Hospital Closed on Sunday',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Doctors do not take appointments on Sundays.\nPlease pick a date from Monday to Saturday above.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (slotsAsync == null) return const SizedBox.shrink();
+
+    return slotsAsync.when(
+      data: (slots) {
+        if (slots.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.schedule_outlined, size: 48, color: AppColors.borderLight),
+                const SizedBox(height: 12),
+                Text(
+                  'No slots scheduled for this date',
+                  style: TextStyle(
+                    color: AppColors.textSecondaryLight,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final availableCount = slots.where((s) => s.isAvailable).length;
+        final busyCount = slots.length - availableCount;
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '$availableCount Available Slots',
+                    style: const TextStyle(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  if (busyCount > 0)
+                    Text(
+                      '$busyCount Doctor Busy',
+                      style: const TextStyle(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 2.2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                ),
+                itemCount: slots.length,
+                itemBuilder: (context, index) {
+                  final slot = slots[index];
+                  final isSelected = _selectedSlotId == slot.id;
+                  final isBooked = !slot.isAvailable;
+
+                  return GestureDetector(
+                    onTap: isBooked
+                        ? () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('⚠️ Doctor is busy / already booked at this time. Please select another slot.'),
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          }
+                        : () {
+                            setState(() {
+                              _selectedSlotId = slot.id;
+                            });
+                          },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isBooked
+                              ? AppColors.error.withOpacity(0.4)
+                              : (isSelected
+                                  ? AppColors.primary
+                                  : AppColors.borderLight),
+                          width: isSelected ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        color: isBooked
+                            ? AppColors.error.withOpacity(0.06)
+                            : (isSelected
+                                ? AppColors.primary.withOpacity(0.12)
+                                : AppColors.cardLight),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.15),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                )
+                              ]
+                            : null,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isBooked
+                                ? Icons.do_not_disturb_on
+                                : (isSelected
+                                    ? Icons.check_circle
+                                    : Icons.access_time),
+                            size: 20,
+                            color: isBooked
+                                ? AppColors.error
+                                : (isSelected
+                                    ? AppColors.primary
+                                    : AppColors.textSecondaryLight),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  slot.time,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: isBooked
+                                        ? AppColors.error
+                                        : AppColors.textPrimaryLight,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: isBooked
+                                        ? AppColors.error.withOpacity(0.15)
+                                        : AppColors.success.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    isBooked ? 'Doctor Busy' : 'Available',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: isBooked
+                                          ? AppColors.error
+                                          : AppColors.success,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const Center(
+        child: CircularProgressIndicator(),
+      ),
+      error: (error, st) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: AppColors.error),
+            const SizedBox(height: 12),
+            Text(
+              'Error loading slots: $error',
+              style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12),
+            ),
+          ],
         ),
       ),
     );
