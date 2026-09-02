@@ -34,6 +34,8 @@ class EmergencyRemoteDataSource {
   static final Map<String, StreamController<EmergencyRequestModel>> _emergencyControllers = {};
   static final Map<String, StreamController<List<TimelineEventModel>>> _timelineControllers = {};
 
+  static Map<String, EmergencyRequestModel> get localEmergencyRequests => _localEmergencyRequests;
+
   CollectionReference<Map<String, dynamic>> get _requests =>
       _firestore.collection('emergency_requests');
 

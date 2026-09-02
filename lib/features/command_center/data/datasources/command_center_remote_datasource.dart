@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:medilink/core/error/exceptions.dart';
+import 'package:medilink/features/emergency/data/datasources/emergency_remote_datasource.dart';
 import 'package:medilink/features/emergency/data/models/emergency_request_model.dart';
 import 'package:medilink/features/emergency/domain/entities/emergency_request.dart';
 
@@ -17,72 +18,108 @@ class CommandCenterRemoteDataSource {
   final FirebaseFunctions _functions;
   final _database = FirebaseDatabase.instance.ref();
 
-  Stream<List<EmergencyRequestModel>> watchHospitalEmergencies(String hospitalId) async* {
-    final controller = StreamController<List<EmergencyRequestModel>>.broadcast();
+  Stream<List<EmergencyRequestModel>> watchHospitalEmergencies(String hospitalId) {
+    late StreamController<List<EmergencyRequestModel>> controller;
     final Map<String, EmergencyRequestModel> emergencyMap = {};
 
     void emitList() {
+      if (controller.isClosed) return;
       final list = emergencyMap.values.toList()
         ..sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
-      if (!controller.isClosed) {
-        controller.add(list);
-      }
+      controller.add(list);
     }
 
-    // 1. Listen to Realtime Database for this specific hospital
-    _database.child('emergencies').child(hospitalId).onValue.listen((event) {
-      if (event.snapshot.exists && event.snapshot.value is Map) {
-        final data = event.snapshot.value as Map<dynamic, dynamic>;
-        data.forEach((key, val) {
-          if (val is Map) {
-            try {
-              final model = EmergencyRequestModel.fromJson(Map<String, dynamic>.from(val));
-              emergencyMap[model.id] = model;
-            } catch (_) {}
+    controller = StreamController<List<EmergencyRequestModel>>(
+      onListen: () {
+        // 1. Instantly seed with in-memory emergency requests so UI NEVER hangs in loading
+        for (final entry in EmergencyRemoteDataSource.localEmergencyRequests.values) {
+          if (entry.selectedHospitalId == hospitalId || hospitalId == 'all' || hospitalId.isEmpty) {
+            emergencyMap[entry.id] = entry;
           }
-        });
-        emitList();
-      }
-    }, onError: (err) {
-      print('DEBUG: RTDB hospital emergency stream note: $err');
-    });
-
-    // 2. Listen to Realtime Database 'all' emergencies as a global sync
-    _database.child('emergencies').child('all').onValue.listen((event) {
-      if (event.snapshot.exists && event.snapshot.value is Map) {
-        final data = event.snapshot.value as Map<dynamic, dynamic>;
-        data.forEach((key, val) {
-          if (val is Map) {
-            try {
-              final model = EmergencyRequestModel.fromJson(Map<String, dynamic>.from(val));
-              if (model.selectedHospitalId == hospitalId || hospitalId == 'all' || hospitalId.isEmpty) {
-                emergencyMap[model.id] = model;
-              }
-            } catch (_) {}
-          }
-        });
-        emitList();
-      }
-    }, onError: (err) {
-      print('DEBUG: RTDB all emergency stream note: $err');
-    });
-
-    // 3. Listen to Firestore collection
-    try {
-      _firestore.collection('emergency_requests').snapshots().listen((snap) {
-        for (final doc in snap.docs) {
-          try {
-            final model = EmergencyRequestModel.fromFirestore(doc);
-            if (model.selectedHospitalId == hospitalId || hospitalId == 'all' || hospitalId.isEmpty) {
-              emergencyMap[model.id] = model;
-            }
-          } catch (_) {}
         }
+        // Emit immediately (even if empty, removes the spinner right away!)
         emitList();
-      });
-    } catch (_) {}
 
-    yield* controller.stream;
+        // 2. Fetch one-time snapshot from RTDB
+        _database.child('emergencies').child('all').get().then((snap) {
+          if (snap.exists && snap.value is Map) {
+            final data = snap.value as Map<dynamic, dynamic>;
+            data.forEach((key, val) {
+              if (val is Map) {
+                try {
+                  final model = EmergencyRequestModel.fromJson(Map<String, dynamic>.from(val));
+                  if (model.selectedHospitalId == hospitalId || hospitalId == 'all' || hospitalId.isEmpty) {
+                    emergencyMap[model.id] = model;
+                  }
+                } catch (_) {}
+              }
+            });
+            emitList();
+          }
+        }).catchError((_) {});
+
+        // 3. Listen to Realtime Database 'all' emergencies
+        _database.child('emergencies').child('all').onValue.listen((event) {
+          if (event.snapshot.exists && event.snapshot.value is Map) {
+            final data = event.snapshot.value as Map<dynamic, dynamic>;
+            data.forEach((key, val) {
+              if (val is Map) {
+                try {
+                  final model = EmergencyRequestModel.fromJson(Map<String, dynamic>.from(val));
+                  if (model.selectedHospitalId == hospitalId || hospitalId == 'all' || hospitalId.isEmpty) {
+                    emergencyMap[model.id] = model;
+                  }
+                } catch (_) {}
+              }
+            });
+          }
+          emitList();
+        }, onError: (err) {
+          print('DEBUG: RTDB all emergency stream note: $err');
+          emitList();
+        });
+
+        // 4. Listen to Realtime Database hospital-specific node
+        if (hospitalId.isNotEmpty && hospitalId != 'all') {
+          _database.child('emergencies').child(hospitalId).onValue.listen((event) {
+            if (event.snapshot.exists && event.snapshot.value is Map) {
+              final data = event.snapshot.value as Map<dynamic, dynamic>;
+              data.forEach((key, val) {
+                if (val is Map) {
+                  try {
+                    final model = EmergencyRequestModel.fromJson(Map<String, dynamic>.from(val));
+                    emergencyMap[model.id] = model;
+                  } catch (_) {}
+                }
+              });
+            }
+            emitList();
+          }, onError: (err) {
+            print('DEBUG: RTDB hospital emergency stream note: $err');
+            emitList();
+          });
+        }
+
+        // 5. Also listen to Firestore collection
+        try {
+          _firestore.collection('emergency_requests').snapshots().listen((snap) {
+            for (final doc in snap.docs) {
+              try {
+                final model = EmergencyRequestModel.fromFirestore(doc);
+                if (model.selectedHospitalId == hospitalId || hospitalId == 'all' || hospitalId.isEmpty) {
+                  emergencyMap[model.id] = model;
+                }
+              } catch (_) {}
+            }
+            emitList();
+          }, onError: (_) {
+            emitList();
+          });
+        } catch (_) {}
+      },
+    );
+
+    return controller.stream;
   }
 
   Future<void> _call(String name, Map<String, dynamic> params) async {

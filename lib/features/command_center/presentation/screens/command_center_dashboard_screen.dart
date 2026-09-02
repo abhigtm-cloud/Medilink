@@ -53,22 +53,11 @@ class _CommandCenterDashboardScreenState
       ),
       body: hospitalIdAsync.when(
         data: (hospitalId) {
-          if (hospitalId == null) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'No hospital linked to your account yet. Create your '
-                  'hospital, or contact support if you already have one.',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            );
-          }
-          return _CommandCenterBody(hospitalId: hospitalId, tabController: _tabController);
+          final targetHospitalId = (hospitalId != null && hospitalId.isNotEmpty) ? hospitalId : 'all';
+          return _CommandCenterBody(hospitalId: targetHospitalId, tabController: _tabController);
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Unable to load: $error')),
+        loading: () => _CommandCenterBody(hospitalId: 'all', tabController: _tabController),
+        error: (_, __) => _CommandCenterBody(hospitalId: 'all', tabController: _tabController),
       ),
     );
   }
@@ -83,36 +72,36 @@ class _CommandCenterBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final emergenciesAsync = ref.watch(hospitalEmergenciesProvider(hospitalId));
+    final emergencies = emergenciesAsync.valueOrNull ?? [];
+    final isLoading = emergenciesAsync.isLoading && emergencies.isEmpty;
 
-    return emergenciesAsync.when(
-      data: (emergencies) {
-        final incoming =
-            emergencies.where((e) => incomingStatuses.contains(e.status.name)).toList();
-        final active =
-            emergencies.where((e) => activeStatuses.contains(e.status.name)).toList();
-        final history =
-            emergencies.where((e) => historyStatuses.contains(e.status.name)).toList();
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-        return TabBarView(
-          controller: tabController,
-          children: [
-            _EmergencyList(
-              requests: incoming,
-              emptyMessage: 'No incoming emergencies right now.',
-            ),
-            _EmergencyList(
-              requests: active,
-              emptyMessage: 'No active emergencies.',
-            ),
-            _EmergencyList(
-              requests: history,
-              emptyMessage: 'No completed or closed emergencies yet.',
-            ),
-          ],
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('Unable to load emergencies: $error')),
+    final incoming =
+        emergencies.where((e) => incomingStatuses.contains(e.status.name)).toList();
+    final active =
+        emergencies.where((e) => activeStatuses.contains(e.status.name)).toList();
+    final history =
+        emergencies.where((e) => historyStatuses.contains(e.status.name)).toList();
+
+    return TabBarView(
+      controller: tabController,
+      children: [
+        _EmergencyList(
+          requests: incoming,
+          emptyMessage: 'No incoming emergencies right now.',
+        ),
+        _EmergencyList(
+          requests: active,
+          emptyMessage: 'No active emergencies.',
+        ),
+        _EmergencyList(
+          requests: history,
+          emptyMessage: 'No completed or closed emergencies yet.',
+        ),
+      ],
     );
   }
 }
