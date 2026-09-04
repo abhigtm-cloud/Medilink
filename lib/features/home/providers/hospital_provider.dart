@@ -20,9 +20,16 @@ final getAdminHospitalsProvider = FutureProvider<List<Hospital>>((ref) async {
   final repo = ref.watch(hospitalRepositoryProvider);
   
   return authState.when(
-    data: (user) {
+    data: (user) async {
       if (user == null) return [];
-      return repo.getHospitalsByAdmin(user.uid);
+      final adminHospitals = await repo.getHospitalsByAdmin(user.uid);
+      if (adminHospitals.isNotEmpty) {
+        return adminHospitals;
+      }
+      if (user.role == UserRole.hospitalAdmin || user.email.toLowerCase().endsWith('@hospital.com')) {
+        return await repo.getAllHospitals();
+      }
+      return [];
     },
     loading: () => [],
     error: (_, __) => [],

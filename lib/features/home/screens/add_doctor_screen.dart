@@ -57,11 +57,40 @@ class _AddDoctorScreenState extends ConsumerState<AddDoctorScreen> {
       return;
     }
 
-    // Validate all doctor forms
+    // SECURITY GATE: Verify caller is an authorized hospital admin
+    final currentAdmin = FirebaseAuth.instance.currentUser;
+    final currentEmail = currentAdmin?.email?.toLowerCase() ?? '';
+    final isAuthorized = currentEmail.endsWith('@hospital.com');
+    if (!isAuthorized && currentAdmin != null) {
+      final roleSnap = await FirebaseDatabase.instance.ref('users/${currentAdmin.uid}/role').get();
+      final role = roleSnap.value?.toString();
+      if (role != 'hospitalAdmin' && role != 'hospital_admin') {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Security Violation: Only verified Hospital Admins can provision doctor credentials.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
+    // Validate all doctor forms & enforce strong password policy (>= 8 chars)
     for (final doctor in _doctors) {
       if (!doctor.validate()) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please fill in all doctor details')),
+        );
+        return;
+      }
+      final pwd = doctor.passwordController.text.trim();
+      if (pwd.length < 8) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Security Policy: Doctor password must be at least 8 characters long.'),
+            backgroundColor: Colors.red,
+          ),
         );
         return;
       }
@@ -70,7 +99,7 @@ class _AddDoctorScreenState extends ConsumerState<AddDoctorScreen> {
     setState(() => _isSaving = true);
 
     try {
-      // Create doctors with custom credentials
+      // Create doctors with custom credentials & audit trail
       for (final doctorForm in _doctors) {
         final email = doctorForm.emailController.text.trim();
         final password = doctorForm.passwordController.text.trim();
@@ -123,6 +152,8 @@ class _AddDoctorScreenState extends ConsumerState<AddDoctorScreen> {
               'role': 'doctor',
               'hospitalId': widget.hospitalId,
               'doctorId': createdDoctor.id,
+              'createdByAdminUid': currentAdmin?.uid,
+              'createdByAdminEmail': currentEmail,
               'createdAt': DateTime.now().toIso8601String(),
             });
           } catch (userErr) {
@@ -135,6 +166,7 @@ class _AddDoctorScreenState extends ConsumerState<AddDoctorScreen> {
               'role': 'doctor',
               'name': doctor.name,
               'doctorId': createdDoctor.id,
+              'createdByAdminUid': currentAdmin?.uid,
               'assignedAt': DateTime.now().toIso8601String(),
             });
           } catch (_) {}

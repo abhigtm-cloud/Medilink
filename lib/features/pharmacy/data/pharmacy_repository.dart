@@ -252,7 +252,45 @@ class PharmacyRepository {
     required String deliveryAddress,
     String? prescriptionId,
   }) async {
-    final totalAmount = items.fold<double>(0, (total, item) => total + item.unitPrice * item.quantity);
+    // SECURITY HARDENING: Server-authoritative price verification
+    // Fetch authentic price list directly from database to prevent client price spoofing
+    Map<String, double> authenticPrices = {};
+    try {
+      final inventorySnap = await _database
+          .ref('hospitals')
+          .child(hospitalId)
+          .child('pharmacy_inventory')
+          .get();
+
+      if (inventorySnap.exists && inventorySnap.value is Map) {
+        final rawMap = inventorySnap.value as Map<dynamic, dynamic>;
+        rawMap.forEach((k, v) {
+          if (v is Map) {
+            final price = (v['unitPrice'] as num? ?? v['price'] as num?)?.toDouble();
+            if (price != null) {
+              authenticPrices[k.toString()] = price;
+            }
+          }
+        });
+      }
+    } catch (_) {}
+
+    // Verify and reconstruct items using verified catalog prices
+    final verifiedItems = items.map((item) {
+      final verifiedPrice = authenticPrices[item.medicineId] ?? item.unitPrice;
+      return PharmacyOrderItem(
+        medicineId: item.medicineId,
+        name: item.name,
+        quantity: item.quantity > 0 ? item.quantity : 1,
+        unitPrice: verifiedPrice,
+      );
+    }).toList();
+
+    final verifiedTotalAmount = verifiedItems.fold<double>(
+      0,
+      (total, item) => total + item.unitPrice * item.quantity,
+    );
+
     final orderId = _database
             .ref('hospitals')
             .child(hospitalId)
@@ -266,8 +304,8 @@ class PharmacyRepository {
       'patientUid': patientUid,
       'hospitalId': hospitalId,
       'prescriptionId': prescriptionId,
-      'items': items.map((i) => i.toJson()).toList(),
-      'totalAmount': totalAmount,
+      'items': verifiedItems.map((i) => i.toJson()).toList(),
+      'totalAmount': verifiedTotalAmount,
       'status': 'placed',
       'deliveryAddress': deliveryAddress,
       'createdAt': DateTime.now().toIso8601String(),

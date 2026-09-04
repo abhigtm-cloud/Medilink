@@ -43,13 +43,13 @@ class Slot {
   factory Slot.fromJson(Map<String, dynamic> json, {String? docId}) {
     return Slot(
       id: docId ?? json['id'] as String?,
-      doctorId: json['doctorId'] as String,
-      hospitalId: json['hospitalId'] as String,
-      date: json['date'] as String,
-      time: json['time'] as String,
+      doctorId: json['doctorId'] as String? ?? '',
+      hospitalId: json['hospitalId'] as String? ?? '',
+      date: json['date'] as String? ?? '',
+      time: json['time'] as String? ?? '',
       bookedBy: json['bookedBy'] as String?,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+          ? DateTime.tryParse(json['createdAt'].toString())
           : null,
     );
   }

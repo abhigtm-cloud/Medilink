@@ -74,12 +74,12 @@ class Hospital {
 
     return Hospital(
       id: docId ?? json['id'] as String?,
-      name: json['name'] as String,
-      address: json['address'] as String,
-      contact: json['contact'] as String,
+      name: json['name'] as String? ?? 'Hospital',
+      address: json['address'] as String? ?? 'Address not specified',
+      contact: json['contact'] as String? ?? '',
       adminId: json['adminId'] as String?,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+          ? DateTime.tryParse(json['createdAt'].toString())
           : null,
       photoUrl: json['photoUrl'] as String?,
       latitude: lat,

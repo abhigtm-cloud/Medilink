@@ -141,11 +141,11 @@ class DoctorRepository {
         return (cachedDoctors)
             .map((item) => Doctor.fromJson(
                   Map<String, dynamic>.from(item as Map),
-                  docId: (item)['id'],
+                  docId: (item)['id']?.toString(),
                 ))
             .toList();
       } catch (e) {
-        return [];
+        print('DEBUG: Cache parse error for doctors, fetching from Firebase: $e');
         // Fall through to Firebase
       }
     }

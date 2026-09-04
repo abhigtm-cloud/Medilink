@@ -27,7 +27,10 @@ class UserProfileRepository {
   /// Update user profile in Firebase
   Future<void> updateUserProfile(AppUser user) async {
     try {
-      await _usersRef.child(user.uid).update(user.toJson());
+      final json = user.toJson();
+      // SECURITY HARDENING: Strip role from profile update payloads to prevent client role escalation
+      json.remove('role');
+      await _usersRef.child(user.uid).update(json);
     } catch (e) {
       print('DEBUG: Error updating user profile: $e');
       throw Exception('Failed to update profile: $e');
@@ -36,6 +39,10 @@ class UserProfileRepository {
 
   /// Update specific user field
   Future<void> updateUserField(String uid, String field, dynamic value) async {
+    // SECURITY HARDENING: Explicitly block role field modification
+    if (field == 'role') {
+      throw Exception('Security violation: Role cannot be updated through standard profile API');
+    }
     try {
       await _usersRef.child(uid).update({
         field: value,

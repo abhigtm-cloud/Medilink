@@ -49,13 +49,15 @@ class Booking {
   factory Booking.fromJson(Map<String, dynamic> json, {String? docId}) {
     return Booking(
       id: docId ?? json['id'] as String?,
-      userId: json['userId'] as String,
-      hospitalId: json['hospitalId'] as String,
-      doctorId: json['doctorId'] as String,
-      slotId: json['slotId'] as String,
-      date: json['date'] as String,
-      time: json['time'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      userId: json['userId'] as String? ?? '',
+      hospitalId: json['hospitalId'] as String? ?? '',
+      doctorId: json['doctorId'] as String? ?? '',
+      slotId: json['slotId'] as String? ?? '',
+      date: json['date'] as String? ?? '',
+      time: json['time'] as String? ?? '',
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+          : DateTime.now(),
       status: BookingStatus.values.firstWhere(
         (e) => e.toString() == 'BookingStatus.${json['status']}',
         orElse: () => BookingStatus.confirmed,

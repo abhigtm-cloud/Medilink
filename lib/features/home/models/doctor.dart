@@ -65,19 +65,21 @@ class Doctor {
   factory Doctor.fromJson(Map<String, dynamic> json, {String? docId}) {
     return Doctor(
       id: docId ?? json['id'] as String?,
-      hospitalId: json['hospitalId'] as String,
-      name: json['name'] as String,
-      specialization: json['specialization'] as String,
-      startTime: json['startTime'] as String,
-      endTime: json['endTime'] as String,
-      slotDurationMinutes: json['slotDurationMinutes'] as int,
+      hospitalId: json['hospitalId'] as String? ?? '',
+      name: json['name'] as String? ?? 'Doctor',
+      specialization: json['specialization'] as String? ?? 'General Physician',
+      startTime: json['startTime'] as String? ?? '09:00',
+      endTime: json['endTime'] as String? ?? '17:00',
+      slotDurationMinutes: json['slotDurationMinutes'] != null
+          ? int.tryParse(json['slotDurationMinutes'].toString()) ?? 30
+          : 30,
       photoUrl: json['photoUrl'] as String?,
       email: json['email'] as String?,
       isAbsent: json['isAbsent'] as bool? ?? false,
       absentReason: json['absentReason'] as String?,
       authUid: json['authUid'] as String?,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+          ? DateTime.tryParse(json['createdAt'].toString())
           : null,
     );
   }
