@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medilink/features/home/models/hospital.dart';
 import 'package:medilink/features/home/repositories/hospital_repository.dart';
 import 'package:medilink/features/auth/providers/auth_providers.dart';
+import 'package:medilink/features/auth/models/app_user.dart';
 
 /// Provides a singleton instance of [HospitalRepository].
 final hospitalRepositoryProvider = Provider<HospitalRepository>((ref) {
