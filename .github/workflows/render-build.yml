@@ -45,10 +45,12 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
-          name: "MediLink v1.0.0 Release"
+          tag_name: v1.0.1
+          name: "MediLink v1.0.1 Release"
+          draft: false
+          prerelease: false
           body: |
-            ## 🏥 MediLink v1.0.0 - Healthcare & Emergency Platform
+            ## 🏥 MediLink v1.0.1 - Healthcare & Emergency Platform
 
             ### 🚀 Features Included:
             - **Real-Time Patient Booking & Live Slot Allocation**
