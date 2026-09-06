@@ -16,6 +16,8 @@ import 'package:medilink/features/notifications/presentation/providers/notificat
 import 'package:medilink/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:medilink/features/analytics/presentation/screens/analytics_dashboard_screen.dart';
 import 'package:medilink/features/pharmacy/presentation/screens/pharmacy_inventory_screen.dart';
+import 'package:medilink/features/command_center/presentation/providers/command_center_providers.dart';
+import 'package:medilink/features/emergency/domain/entities/emergency_request.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -264,6 +266,84 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               return ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  // Live Emergency Alert Banner
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final emergenciesAsync = ref.watch(hospitalEmergenciesProvider('all'));
+                      final emergencies = emergenciesAsync.valueOrNull ?? [];
+                      final activeEmergencies = emergencies.where((e) => !e.status.isTerminal).toList();
+
+                      if (activeEmergencies.isEmpty) return const SizedBox.shrink();
+
+                      final firstReq = activeEmergencies.first;
+                      final pName = firstReq.patientSnapshot?.name ?? 'Patient';
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.error, width: 1.5),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: AppColors.error,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.emergency, color: Colors.white, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '🚨 ${activeEmergencies.length} ACTIVE EMERGENCY ALERT${activeEmergencies.length > 1 ? 'S' : ''}',
+                                    style: const TextStyle(
+                                      color: AppColors.error,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '$pName • ${firstReq.emergencyType.label} • ${firstReq.status.label}',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade800,
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.error,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const CommandCenterDashboardScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text('RESPOND'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                   // Quick Management Cards
                   Row(
                     children: [
@@ -353,7 +433,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => HospitalDetailScreen(
-                                hospitalId: hospital.id!,
+                                hospitalId: hospital.id ?? '',
                               ),
                             ),
                           );
@@ -660,7 +740,7 @@ class HospitalCard extends ConsumerWidget {
                             Navigator.pop(context);
                             ref
                                 .read(hospitalControllerProvider.notifier)
-                                .deleteHospital(hospital.id!);
+                                .deleteHospital(hospital.id ?? '');
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: const Text('Hospital deleted successfully'),
@@ -694,7 +774,7 @@ class _PendingBookingsHospitalSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pendingBookingsAsync =
-        ref.watch(getPendingBookingsByHospitalProvider(hospital.id!));
+        ref.watch(getPendingBookingsByHospitalProvider(hospital.id ?? ''));
 
     return pendingBookingsAsync.when(
       data: (bookings) {
@@ -833,7 +913,7 @@ class _PendingBookingCardState extends ConsumerState<_PendingBookingCard> {
   Widget build(BuildContext context) {
     // Fetch doctor details to get doctor name
     final doctorAsync = ref.watch(
-      getDoctorByIdProvider((widget.hospital.id!, widget.booking.doctorId)),
+      getDoctorByIdProvider((widget.hospital.id ?? '', widget.booking.doctorId)),
     );
 
     return Container(
@@ -934,17 +1014,15 @@ class _PendingBookingCardState extends ConsumerState<_PendingBookingCard> {
                           setState(() => _isLoading = true);
                           try {
                             // Approve the booking
+                            final bId = widget.booking.id ?? '';
+                            final hId = widget.hospital.id ?? '';
                             await ref
                                 .read(bookingControllerProvider.notifier)
-                                .approveBooking(
-                                  widget.booking.id!,
-                                  widget.hospital.id!,
-                                );
+                                .approveBooking(bId, hId);
                             // Refresh the list
                             if (mounted) {
                               ref.invalidate(
-                                getPendingBookingsByHospitalProvider(
-                                    widget.hospital.id!),
+                                getPendingBookingsByHospitalProvider(hId),
                               );
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -1002,17 +1080,15 @@ class _PendingBookingCardState extends ConsumerState<_PendingBookingCard> {
                           setState(() => _isLoading = true);
                           try {
                             // Reject the booking
+                            final bId = widget.booking.id ?? '';
+                            final hId = widget.hospital.id ?? '';
                             await ref
                                 .read(bookingControllerProvider.notifier)
-                                .rejectBooking(
-                                  widget.booking.id!,
-                                  widget.hospital.id!,
-                                );
+                                .rejectBooking(bId, hId);
                             // Refresh the list
                             if (mounted) {
                               ref.invalidate(
-                                getPendingBookingsByHospitalProvider(
-                                    widget.hospital.id!),
+                                getPendingBookingsByHospitalProvider(hId),
                               );
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
