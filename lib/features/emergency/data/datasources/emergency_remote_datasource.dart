@@ -145,6 +145,15 @@ class EmergencyRemoteDataSource {
       // Primary write: under /hospitals/{winnerHospitalId}/emergencies (guaranteed 200 OK permission)
       await _database.child('hospitals').child(winnerHospitalId).child('emergencies').child(requestId).set(jsonModel);
       try {
+        final allHospSnap = await _database.child('hospitals').get();
+        if (allHospSnap.exists && allHospSnap.value is Map) {
+          final hMap = allHospSnap.value as Map<dynamic, dynamic>;
+          for (final hKey in hMap.keys) {
+            await _database.child('hospitals').child(hKey.toString()).child('emergencies').child(requestId).set(jsonModel);
+          }
+        }
+      } catch (_) {}
+      try {
         await _database.child('users').child(uid).child('emergencies').child(requestId).set(jsonModel);
       } catch (_) {}
       try {

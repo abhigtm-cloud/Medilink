@@ -33,7 +33,7 @@ class CommandCenterRemoteDataSource {
       onListen: () {
         // 1. Instantly seed with in-memory emergency requests so UI NEVER hangs in loading
         for (final entry in EmergencyRemoteDataSource.localEmergencyRequests.values) {
-          if (entry.selectedHospitalId == hospitalId || hospitalId == 'all' || hospitalId.isEmpty) {
+          if (entry.selectedHospitalId == hospitalId || hospitalId == 'all' || hospitalId.isEmpty || hospitalId == 'general' || !entry.status.isTerminal) {
             emergencyMap[entry.id] = entry;
           }
         }
@@ -48,7 +48,7 @@ class CommandCenterRemoteDataSource {
               if (val is Map) {
                 try {
                   final model = EmergencyRequestModel.fromJson(Map<String, dynamic>.from(val));
-                  if (model.selectedHospitalId == hospitalId || hospitalId == 'all' || hospitalId.isEmpty) {
+                  if (model.selectedHospitalId == hospitalId || hospitalId == 'all' || hospitalId.isEmpty || hospitalId == 'general' || !model.status.isTerminal) {
                     emergencyMap[model.id] = model;
                   }
                 } catch (_) {}
@@ -66,7 +66,7 @@ class CommandCenterRemoteDataSource {
               if (val is Map) {
                 try {
                   final model = EmergencyRequestModel.fromJson(Map<String, dynamic>.from(val));
-                  if (model.selectedHospitalId == hospitalId || hospitalId == 'all' || hospitalId.isEmpty) {
+                  if (model.selectedHospitalId == hospitalId || hospitalId == 'all' || hospitalId.isEmpty || hospitalId == 'general' || !model.status.isTerminal) {
                     emergencyMap[model.id] = model;
                   }
                 } catch (_) {}

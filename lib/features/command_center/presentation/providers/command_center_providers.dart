@@ -24,7 +24,7 @@ final hospitalEmergenciesProvider =
       .map((e) => e.match((f) => throw f, (r) => r));
 });
 
-const incomingStatuses = {'hospitalAssigned'};
+const incomingStatuses = {'requested', 'searchingHospital', 'hospitalAssigned', 'patient_distress'};
 
 const activeStatuses = {
   'accepted',

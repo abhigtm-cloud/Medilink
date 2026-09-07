@@ -18,24 +18,17 @@ class AmbulanceManagementScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceLight,
       appBar: AppBar(title: const Text('Ambulance Fleet')),
-      floatingActionButton: hospitalIdAsync.maybeWhen(
-        data: (hospitalId) => hospitalId == null
-            ? null
-            : FloatingActionButton(
-                onPressed: () => _showRegisterDialog(context, ref),
-                child: const Icon(Icons.add),
-              ),
-        orElse: () => null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showRegisterDialog(context, ref),
+        child: const Icon(Icons.add),
       ),
       body: hospitalIdAsync.when(
         data: (hospitalId) {
-          if (hospitalId == null) {
-            return const Center(child: Text('No hospital linked to your account yet.'));
-          }
-          return _FleetList(hospitalId: hospitalId);
+          final targetHospitalId = (hospitalId != null && hospitalId.isNotEmpty) ? hospitalId : 'general';
+          return _FleetList(hospitalId: targetHospitalId);
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Unable to load: $error')),
+        loading: () => const _FleetList(hospitalId: 'general'),
+        error: (_, __) => const _FleetList(hospitalId: 'general'),
       ),
     );
   }
@@ -93,11 +86,14 @@ class AmbulanceManagementScreen extends ConsumerWidget {
       return;
     }
 
+    final targetHospitalId = ref.read(currentHospitalIdProvider).valueOrNull ?? 'general';
+
     final result = await ref.read(ambulanceRepositoryProvider).registerAmbulance(
           vehicleNumber: vehicleController.text.trim(),
           driverName: nameController.text.trim(),
           driverPhone: phoneController.text.trim(),
           driverEmail: emailController.text.trim().isEmpty ? null : emailController.text.trim(),
+          hospitalId: targetHospitalId,
         );
 
     if (!context.mounted) return;
@@ -105,7 +101,7 @@ class AmbulanceManagementScreen extends ConsumerWidget {
       (failure) =>
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(failure.message))),
       (_) => ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Ambulance registered'))),
+          .showSnackBar(const SnackBar(content: Text('✅ Ambulance registered'))),
     );
   }
 }

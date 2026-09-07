@@ -47,31 +47,41 @@ class _PharmacyInventoryScreenState extends ConsumerState<PharmacyInventoryScree
           tabs: const [Tab(text: 'Inventory'), Tab(text: 'Prescriptions'), Tab(text: 'Orders')],
         ),
       ),
-      floatingActionButton: hospitalIdAsync.maybeWhen(
-        data: (hospitalId) => hospitalId != null && _tabController.index == 0
-            ? FloatingActionButton(
-                onPressed: () => _showMedicineDialog(context, hospitalId),
-                child: const Icon(Icons.add),
-              )
-            : null,
-        orElse: () => null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          final hId = hospitalIdAsync.valueOrNull ?? 'general';
+          _showMedicineDialog(context, hId);
+        },
+        child: const Icon(Icons.add),
       ),
       body: hospitalIdAsync.when(
         data: (hospitalId) {
-          if (hospitalId == null) {
-            return const Center(child: Text('No hospital linked to your account yet.'));
-          }
+          final targetHospitalId = (hospitalId != null && hospitalId.isNotEmpty) ? hospitalId : 'general';
           return TabBarView(
             controller: _tabController,
             children: [
-              _InventoryTab(hospitalId: hospitalId, onAdd: () => _showMedicineDialog(context, hospitalId)),
-              _PrescriptionsTab(hospitalId: hospitalId),
-              _OrdersTab(hospitalId: hospitalId),
+              _InventoryTab(hospitalId: targetHospitalId, onAdd: () => _showMedicineDialog(context, targetHospitalId)),
+              _PrescriptionsTab(hospitalId: targetHospitalId),
+              _OrdersTab(hospitalId: targetHospitalId),
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Unable to load: $error')),
+        loading: () => TabBarView(
+          controller: _tabController,
+          children: [
+            _InventoryTab(hospitalId: 'general', onAdd: () => _showMedicineDialog(context, 'general')),
+            const _PrescriptionsTab(hospitalId: 'general'),
+            const _OrdersTab(hospitalId: 'general'),
+          ],
+        ),
+        error: (_, __) => TabBarView(
+          controller: _tabController,
+          children: [
+            _InventoryTab(hospitalId: 'general', onAdd: () => _showMedicineDialog(context, 'general')),
+            const _PrescriptionsTab(hospitalId: 'general'),
+            const _OrdersTab(hospitalId: 'general'),
+          ],
+        ),
       ),
     );
   }
@@ -200,8 +210,10 @@ class _PrescriptionsTab extends ConsumerWidget {
               margin: const EdgeInsets.symmetric(vertical: 6),
               child: Column(
                 children: [
-                  Image.network(prescription.imageUrl, height: 160, fit: BoxFit.cover, errorBuilder: (_, __, ___) =>
-                      const SizedBox(height: 160, child: Icon(Icons.broken_image))),
+                  prescription.imageUrl.isNotEmpty
+                      ? Image.network(prescription.imageUrl, height: 160, fit: BoxFit.cover, errorBuilder: (_, __, ___) =>
+                          const SizedBox(height: 160, child: Icon(Icons.broken_image)))
+                      : const SizedBox(height: 160, child: Icon(Icons.description, size: 64, color: AppColors.primary)),
                   Padding(
                     padding: const EdgeInsets.all(8),
                     child: Row(

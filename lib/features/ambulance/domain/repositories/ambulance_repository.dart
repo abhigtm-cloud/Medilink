@@ -25,6 +25,7 @@ abstract class AmbulanceRepository {
     required String driverName,
     required String driverPhone,
     String? driverEmail,
+    String? hospitalId,
   });
 
   Future<Either<Failure, Unit>> setAvailability(String ambulanceId, AmbulanceStatus status);

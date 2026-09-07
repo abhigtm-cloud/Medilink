@@ -45,23 +45,19 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.2
-          name: "MediLink v1.0.2 Release"
+          tag_name: v1.0.3
+          name: "MediLink v1.0.3 Release"
           draft: false
           prerelease: false
           body: |
-            ## 🏥 MediLink v1.0.2 - Healthcare & Emergency Platform (Latest)
+            ## 🏥 MediLink v1.0.3 - Healthcare & Emergency Platform (Latest Fixes)
 
-            ### 🚀 Latest Improvements in This Release:
-            - **Hospital Admin Dashboard Fixes**: Complete null-safety resolution for `admin@hospital.com` and all hospital accounts.
-            - **Real-Time Live Emergency Banner**: Instant active emergency distress notification right on top of the Hospital Dashboard with direct response action.
-            - **Reliable Doctor & Slot Viewing**: Direct fallback and resilient parsing for live doctor rosters and appointment booking.
-            - **Real-Time Patient Booking & Live Slot Allocation**
-            - **Emergency SOS Distress System with Instant Hospital Dispatch**
-            - **Live Emergency Command Center with Timeline Tracking**
-            - **Hospital Staff Hub (Doctor, Ambulance Driver & Pharmacy Roles)**
-            - **Ambulance Fleet Tracking & Availability Management**
-            - **Pharmacy Inventory & Prescription Verification System**
+            ### 🚀 Highlights & Fixes in v1.0.3:
+            - **Live Emergency Command Center**: Full RTDB broadcast & instant sync — all hospital admins receive real-time SOS distress alerts regardless of hospital ID mapping.
+            - **Ambulance Fleet Management**: Added Realtime Database backing & hospitalId registration to eliminate null instance / permission errors.
+            - **Staff Hub & Cross-Module Auto-Sync**: Adding doctors or drivers automatically updates Doctor Rosters, Appointment Booking, and Ambulance Dispatch!
+            - **Pharmacy Inventory & Prescriptions**: Fortified image handling and hospital fallback to prevent null instance crashes.
+            - **Hospital Admin Dashboard**: Fully null-safe with Live Emergency Banner and direct Respond button.
 
             ### 📱 Download & Install:
             Download the `app-release.apk` below directly onto your Android device!

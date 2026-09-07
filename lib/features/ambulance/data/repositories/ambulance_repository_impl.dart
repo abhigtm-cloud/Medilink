@@ -70,6 +70,7 @@ class AmbulanceRepositoryImpl implements AmbulanceRepository {
     required String driverName,
     required String driverPhone,
     String? driverEmail,
+    String? hospitalId,
   }) async {
     try {
       final id = await _remote.registerAmbulance(
@@ -77,6 +78,7 @@ class AmbulanceRepositoryImpl implements AmbulanceRepository {
         driverName: driverName,
         driverPhone: driverPhone,
         driverEmail: driverEmail,
+        hospitalId: hospitalId,
       );
       return Right(id);
     } catch (e) {

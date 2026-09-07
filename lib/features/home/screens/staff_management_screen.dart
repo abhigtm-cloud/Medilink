@@ -54,8 +54,10 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
     setState(() => _submitting = true);
     try {
       final email = _emailController.text.trim();
+      final name = _nameController.text.trim();
       await _service.assignStaffRole(
         email: email,
+        name: name,
         role: _role,
         hospitalId: hospitalId,
       );
