@@ -159,27 +159,33 @@ class EmergencyDetailScreen extends ConsumerWidget {
                 ),
                 child: Column(
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on, color: Colors.red, size: 28),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Patient Real-Time GPS Coordinates',
-                                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                              ),
-                              Text(
-                                'Lat: ${location.latitude.toStringAsFixed(5)}, Lng: ${location.longitude.toStringAsFixed(5)}',
-                                style: const TextStyle(fontSize: 12, color: Colors.black87),
-                              ),
-                            ],
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on, color: Colors.red, size: 28),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Patient Live Location',
+                                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.red),
+                                ),
+                                FutureBuilder<String>(
+                                  future: LocationService.getPlaceName(location.latitude, location.longitude),
+                                  builder: (context, placeSnapshot) {
+                                    final place = placeSnapshot.data ?? 'Resolving location address...';
+                                    return Text(
+                                      place,
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                     const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,

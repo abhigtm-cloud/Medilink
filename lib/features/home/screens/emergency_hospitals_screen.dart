@@ -36,9 +36,7 @@ class _EmergencyHospitalsScreenState
   Future<List<Map<String, dynamic>>> _getHospitalsSortedByDistance() async {
     try {
       // Get user location
-      _userPosition = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+      _userPosition = await LocationService.getCurrentLocation();
 
       // Get all hospitals
       final hospitalsAsync = ref.read(getAllHospitalsProvider);
@@ -61,9 +59,9 @@ class _EmergencyHospitalsScreenState
         hospitalsWithDistance.add({
           'hospital': hospital,
           'distance': distance,
-          'distanceStr': distance < 1
-              ? '${(distance * 1000).toStringAsFixed(0)}m'
-              : '${distance.toStringAsFixed(1)}km',
+          'distanceStr': distance < 9000
+              ? LocationService.formatDistance(distance)
+              : 'Distance unavailable',
         });
       }
 

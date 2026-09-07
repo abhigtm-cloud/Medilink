@@ -372,54 +372,84 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
   Widget _buildLocationSection() {
     return Container(
       color: AppColors.cardLight,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Icon(Icons.location_on, color: AppColors.primary, size: 20),
-          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.location_on, color: AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Current Location',
-                  style: Theme.of(context).textTheme.labelSmall,
+                Row(
+                  children: [
+                    Text(
+                      'YOUR CURRENT LOCATION',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textSecondaryLight,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    if (!_loadingLocation && _currentPlaceName != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'GPS Live',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.success,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
+                const SizedBox(height: 2),
                 if (_loadingLocation)
-                  Text(
-                    'Loading location...',
-                    style: Theme.of(context).textTheme.titleSmall,
+                  const Text(
+                    'Detecting GPS location...',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                   )
-                else if (_currentPosition != null && _currentPlaceName != null)
+                else if (_currentPlaceName != null && _currentPlaceName!.isNotEmpty)
                   Text(
                     _currentPlaceName!,
-                    style: Theme.of(context).textTheme.titleSmall,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  )
-                else if (_currentPosition != null)
-                  Text(
-                    '${_currentPosition!.latitude.toStringAsFixed(4)}, ${_currentPosition!.longitude.toStringAsFixed(4)}',
-                    style: Theme.of(context).textTheme.titleSmall,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimaryLight,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   )
                 else
-                  Text(
-                    'Location not available',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: AppColors.error,
-                        ),
+                  const Text(
+                    'Current Location',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                   ),
               ],
             ),
           ),
           IconButton(
             icon: Icon(
-              Icons.refresh,
+              Icons.my_location,
               color: AppColors.primary,
               size: 20,
             ),
+            tooltip: 'Refresh Location',
             onPressed: _loadingLocation ? null : _loadCurrentLocation,
           ),
         ],
@@ -449,26 +479,31 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Get 20% off on your first appointment',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                    'Get 20% off on your first doctor appointment booking',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
+                      foregroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                     ),
                     child: const Text(
-                      'Explore',
+                      'Claim Now',
                       style: TextStyle(
-                        color: Color(0xFF20B2AA),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -477,8 +512,20 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                 ],
               ),
             ),
-            const SizedBox(width: 16),
-            const Icon(Icons.local_offer, color: Colors.white, size: 48),
+            const SizedBox(width: 8),
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: const Icon(
+                Icons.local_offer,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
           ],
         ),
       ),
@@ -487,17 +534,17 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
 
   Widget _buildNearbyHospitalsSection() {
     final hospitalsAsync = ref.watch(getAllHospitalsProvider);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Available Hospitals',
+                'Available Hospitals Nearby',
                 style: TextStyle(
                   color: Color(0xFF1A1A2E),
                   fontSize: 18,
@@ -505,7 +552,7 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () => setState(() => _selectedBottomNav = 1),
                 child: Text(
                   'View all',
                   style: TextStyle(
@@ -537,13 +584,29 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                 ),
               );
             }
+
+            // Build list with real distances and sort nearest first
+            final sortedHospitals = List<Hospital>.from(hospitals);
+            if (_currentPosition != null) {
+              sortedHospitals.sort((a, b) {
+                double distA = 99999;
+                double distB = 99999;
+                if (a.latitude != null && a.longitude != null) {
+                  distA = Geolocator.distanceBetween(_currentPosition!.latitude, _currentPosition!.longitude, a.latitude!, a.longitude!);
+                }
+                if (b.latitude != null && b.longitude != null) {
+                  distB = Geolocator.distanceBetween(_currentPosition!.latitude, _currentPosition!.longitude, b.latitude!, b.longitude!);
+                }
+                return distA.compareTo(distB);
+              });
+            }
             
             return ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: hospitals.length,
+              itemCount: sortedHospitals.length,
               itemBuilder: (context, index) =>
-                  _buildHospitalCard(hospitals[index]),
+                  _buildHospitalCard(sortedHospitals[index]),
             );
           },
           loading: () => Padding(
@@ -575,6 +638,17 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
   }
 
   Widget _buildHospitalCard(Hospital hospital) {
+    double? distKm;
+    if (_currentPosition != null && hospital.latitude != null && hospital.longitude != null) {
+      final distMeters = Geolocator.distanceBetween(
+        _currentPosition!.latitude,
+        _currentPosition!.longitude,
+        hospital.latitude!,
+        hospital.longitude!,
+      );
+      distKm = distMeters / 1000.0;
+    }
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -600,33 +674,64 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Hospital Header with Photo or Icon
-              Container(
-                height: 120,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: AppTheme.healthcareGradient,
-                ),
-                child: hospital.photoUrl != null
-                    ? Image.memory(
-                        base64Decode(hospital.photoUrl!),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
+              Stack(
+                children: [
+                  Container(
+                    height: 120,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.healthcareGradient,
+                    ),
+                    child: hospital.photoUrl != null
+                        ? Image.memory(
+                            base64Decode(hospital.photoUrl!),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(
+                                child: Icon(
+                                  Icons.local_hospital,
+                                  size: 48,
+                                  color: Colors.white,
+                                ),
+                              );
+                            },
+                          )
+                        : const Center(
                             child: Icon(
                               Icons.local_hospital,
                               size: 48,
                               color: Colors.white,
                             ),
-                          );
-                        },
-                      )
-                    : Center(
-                        child: Icon(
-                          Icons.local_hospital,
-                          size: 48,
-                          color: Colors.white,
+                          ),
+                  ),
+                  if (distKm != null)
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.75),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.near_me, color: Colors.amber, size: 12),
+                            const SizedBox(width: 4),
+                            Text(
+                              LocationService.formatDistance(distKm),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                    ),
+                ],
               ),
               // Hospital Info
               Padding(

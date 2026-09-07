@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -18,6 +17,7 @@ class HospitalMapScreen extends ConsumerStatefulWidget {
 
 class _HospitalMapScreenState extends ConsumerState<HospitalMapScreen> {
   Position? _currentPosition;
+  String _currentPlaceName = 'Detecting location...';
   bool _loading = true;
 
   @override
@@ -29,16 +29,31 @@ class _HospitalMapScreenState extends ConsumerState<HospitalMapScreen> {
   Future<void> _initializeLocation() async {
     try {
       final position = await LocationService.getCurrentLocation();
-      if (mounted) {
-        setState(() {
-          _currentPosition = position;
-          _loading = false;
-        });
+      if (position != null) {
+        final placeName = await LocationService.getPlaceName(
+          position.latitude,
+          position.longitude,
+        );
+        if (mounted) {
+          setState(() {
+            _currentPosition = position;
+            _currentPlaceName = placeName;
+            _loading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _loading = false;
+            _currentPlaceName = 'Location unavailable';
+          });
+        }
       }
     } catch (_) {
       if (mounted) {
         setState(() {
           _loading = false;
+          _currentPlaceName = 'Location unavailable';
         });
       }
     }
@@ -75,6 +90,30 @@ class _HospitalMapScreenState extends ConsumerState<HospitalMapScreen> {
   }
 
   Widget _buildHospitalMapView(List<Hospital> hospitals) {
+    // Sort hospitals nearest first if position available
+    final sortedHospitals = List<Hospital>.from(hospitals);
+    if (_currentPosition != null) {
+      sortedHospitals.sort((a, b) {
+        final distA = (a.latitude != null && a.longitude != null)
+            ? EmergencyService.calculateDistance(
+                lat1: _currentPosition!.latitude,
+                lon1: _currentPosition!.longitude,
+                lat2: a.latitude!,
+                lon2: a.longitude!,
+              )
+            : 9999.0;
+        final distB = (b.latitude != null && b.longitude != null)
+            ? EmergencyService.calculateDistance(
+                lat1: _currentPosition!.latitude,
+                lon1: _currentPosition!.longitude,
+                lat2: b.latitude!,
+                lon2: b.longitude!,
+              )
+            : 9999.0;
+        return distA.compareTo(distB);
+      });
+    }
+
     return Column(
       children: [
         // User Location Banner
@@ -90,15 +129,36 @@ class _HospitalMapScreenState extends ConsumerState<HospitalMapScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Your Current Location',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    Row(
+                      children: [
+                        const Text(
+                          'Your Current Location',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'GPS Live',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      _currentPosition != null
-                          ? 'Lat: ${_currentPosition!.latitude.toStringAsFixed(4)}, Lng: ${_currentPosition!.longitude.toStringAsFixed(4)}'
-                          : 'Location detecting...',
+                      _currentPlaceName,
                       style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -111,9 +171,9 @@ class _HospitalMapScreenState extends ConsumerState<HospitalMapScreen> {
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(12),
-            itemCount: hospitals.length,
+            itemCount: sortedHospitals.length,
             itemBuilder: (context, index) {
-              final hospital = hospitals[index];
+              final hospital = sortedHospitals[index];
               double? distKm;
               if (_currentPosition != null &&
                   hospital.latitude != null &&
@@ -170,7 +230,7 @@ class _HospitalMapScreenState extends ConsumerState<HospitalMapScreen> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                '${distKm.toStringAsFixed(1)} km',
+                                LocationService.formatDistance(distKm),
                                 style: const TextStyle(
                                   color: Colors.blue,
                                   fontWeight: FontWeight.bold,

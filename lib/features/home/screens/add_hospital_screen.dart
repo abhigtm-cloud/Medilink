@@ -73,6 +73,7 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
     try {
       final coords = await LocationService.getCoordinatesFromPlace(address);
       if (coords != null) {
+        final placeName = await LocationService.getPlaceName(coords.latitude, coords.longitude);
         setState(() {
           _geocodedLatitude = coords.latitude;
           _geocodedLongitude = coords.longitude;
@@ -82,7 +83,7 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('✅ Location found: ${coords.latitude.toStringAsFixed(4)}, ${coords.longitude.toStringAsFixed(4)}'),
+              content: Text('✅ Location verified: $placeName'),
               backgroundColor: Colors.green,
             ),
           );
@@ -125,7 +126,7 @@ class _AddHospitalAndDoctorsScreenState extends ConsumerState<AddHospitalAndDoct
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('✅ Current GPS detected: ${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}'),
+              content: Text('✅ Current location detected: $placeName'),
               backgroundColor: Colors.green,
             ),
           );

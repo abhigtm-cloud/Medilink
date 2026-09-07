@@ -21,7 +21,6 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   Position? _userPosition;
-  bool _loadingLocation = true;
 
   @override
   void initState() {
@@ -34,7 +33,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     if (mounted) {
       setState(() {
         _userPosition = pos;
-        _loadingLocation = false;
       });
     }
   }
@@ -72,7 +70,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         'distance': distKm,
         'distanceStr': distKm == null
             ? null
-            : (distKm < 1 ? '${(distKm * 1000).toStringAsFixed(0)}m' : '${distKm.toStringAsFixed(1)}km'),
+            : LocationService.formatDistance(distKm),
       });
     }
 

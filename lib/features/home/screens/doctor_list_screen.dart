@@ -310,6 +310,7 @@ class DoctorListScreen extends ConsumerWidget {
           ),
         ),
       ),
+      ),
     );
   }
 }

@@ -54,21 +54,75 @@ class Hospital {
     if (lat == null || lng == null) {
       final addr = (json['address'] as String? ?? '').toLowerCase();
       final name = (json['name'] as String? ?? '').toLowerCase();
-      if (addr.contains('kharar') || name.contains('kharar')) {
+      final text = '$addr $name';
+
+      if (text.contains('kharar')) {
         lat = 30.7441;
         lng = 76.6471;
-      } else if (addr.contains('chandigarh') || name.contains('chandigarh')) {
+      } else if (text.contains('chandigarh')) {
         lat = 30.7333;
         lng = 76.7794;
-      } else if (addr.contains('mohali') || name.contains('mohali')) {
+      } else if (text.contains('mohali') || text.contains('sas nagar')) {
         lat = 30.7046;
         lng = 76.7179;
-      } else if (addr.contains('panchkula') || name.contains('panchkula')) {
+      } else if (text.contains('panchkula')) {
         lat = 30.6942;
         lng = 76.8606;
-      } else if (addr.contains('delhi') || name.contains('delhi')) {
+      } else if (text.contains('zirakpur')) {
+        lat = 30.6425;
+        lng = 76.8173;
+      } else if (text.contains('patiala')) {
+        lat = 30.3398;
+        lng = 76.3869;
+      } else if (text.contains('ludhiana')) {
+        lat = 30.9010;
+        lng = 75.8573;
+      } else if (text.contains('jalandhar')) {
+        lat = 31.3260;
+        lng = 75.5762;
+      } else if (text.contains('amritsar')) {
+        lat = 31.6340;
+        lng = 74.8723;
+      } else if (text.contains('delhi') || text.contains('ncr')) {
         lat = 28.6139;
         lng = 77.2090;
+      } else if (text.contains('noida')) {
+        lat = 28.5355;
+        lng = 77.3910;
+      } else if (text.contains('gurugram') || text.contains('gurgaon')) {
+        lat = 28.4595;
+        lng = 77.0266;
+      } else if (text.contains('mumbai') || text.contains('bombay')) {
+        lat = 19.0760;
+        lng = 72.8777;
+      } else if (text.contains('pune')) {
+        lat = 18.5204;
+        lng = 73.8567;
+      } else if (text.contains('bangalore') || text.contains('bengaluru')) {
+        lat = 12.9716;
+        lng = 77.5946;
+      } else if (text.contains('hyderabad')) {
+        lat = 17.3850;
+        lng = 78.4867;
+      } else if (text.contains('chennai') || text.contains('madras')) {
+        lat = 13.0827;
+        lng = 80.2707;
+      } else if (text.contains('kolkata') || text.contains('calcutta')) {
+        lat = 22.5726;
+        lng = 88.3639;
+      } else if (text.contains('jaipur')) {
+        lat = 26.9124;
+        lng = 75.7873;
+      } else if (text.contains('lucknow')) {
+        lat = 26.8467;
+        lng = 80.9462;
+      } else if (text.contains('ahmedabad')) {
+        lat = 23.0225;
+        lng = 72.5714;
+      } else {
+        // Default to regional hub rather than null
+        lat = 30.7441;
+        lng = 76.6471;
       }
     }
 
