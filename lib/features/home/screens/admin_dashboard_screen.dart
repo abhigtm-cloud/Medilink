@@ -737,10 +737,20 @@ class HospitalCard extends ConsumerWidget {
                             backgroundColor: AppColors.error,
                           ),
                           onPressed: () {
+                            final hId = hospital.id;
                             Navigator.pop(context);
+                            if (hId == null || hId.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Cannot delete hospital: missing hospital ID'),
+                                  backgroundColor: AppColors.error,
+                                ),
+                              );
+                              return;
+                            }
                             ref
                                 .read(hospitalControllerProvider.notifier)
-                                .deleteHospital(hospital.id ?? '');
+                                .deleteHospital(hId);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: const Text('Hospital deleted successfully'),

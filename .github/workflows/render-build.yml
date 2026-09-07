@@ -45,20 +45,18 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.5
-          name: "MediLink v1.0.5 Release - Location & Emergency Overhaul"
+          tag_name: v1.0.6
+          name: "MediLink v1.0.6 Release - Interactive Geo Map & Fixes"
           draft: false
           prerelease: false
           body: |
-            ## 🏥 MediLink v1.0.5 - Comprehensive Location & Emergency Overhaul
+            ## 🏥 MediLink v1.0.6 - Interactive Geo Map & Hospital Management Fixes
 
-            ### 🚀 What's New & Fixed in v1.0.5:
-            - **Accurate Distance & Live GPS Engine**: Overhauled location services to fetch real-time device GPS coordinates with instant fast-path caching. Fixed distance calculations to reflect accurate real-world distances.
-            - **Human-Readable Place Names Everywhere**: Replaced raw coordinate strings across the entire app (User Home, Hospital Map, Emergency, Search, Add Hospital) with clean, readable place names (e.g., `Sector 70, Mohali, Punjab`, `Kharar, Punjab`).
-            - **Dynamic Nearest-First Sorting**: All hospital lists (Home Screen, Hospital Map, Emergency Search, Doctor Discovery) are dynamically sorted nearest-to-farthest with clear distance chips (`📍 1.5 km away` / `800 m away`).
-            - **Emergency Patient GPS & 1-Tap Google Maps Navigation**: Hospital Command Center displays patient live place name address and provides a direct 1-tap **"Open Patient Location in Google Maps"** navigation button.
-            - **Emergency Approve / Accept Flow**: Seamless real-time state synchronization between User Emergency SOS and Hospital Command Center upon accepting emergency requests.
-            - **View Doctors & Booking**: Fully functional doctor roster across hospital cards, map views, and search screen.
+            ### 🚀 What's New & Fixed in v1.0.6:
+            - **Interactive Geo Map Page**: Full-screen OpenStreetMap Geo Map with live GPS tracking, pulsing user marker, and custom interactive tags placed over every hospital's exact coordinates.
+            - **Hospital Map Tags & Popups**: Tap any hospital tag on the map to highlight, view distance, view doctors, and open 1-tap Google Maps turn-by-turn navigation. Toggle between Map View and List View anytime.
+            - **Hospital Deletion Bug Fixed**: Resolved root cause where deleting a hospital caused other hospitals to delete or reload sample data (fixed `Hospital.toJson()` ID serialization, added database safety guards, and removed dummy sample auto-seeding).
+            - **Live GPS & Accurate Distance**: Device GPS fast-path caching and human-readable place names across the entire platform.
 
             ### 📱 Download & Install:
             Download the `app-release.apk` below directly onto your Android device!

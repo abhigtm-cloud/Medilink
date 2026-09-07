@@ -39,9 +39,6 @@ Future<void> main() async {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   }
 
-  // Add sample hospitals if database is empty
-  await _addSampleHospitalsIfNeeded();
-
   // Initialize OFFLINE-FIRST caching service
   await CacheService.initialize();
 
@@ -52,53 +49,6 @@ Future<void> main() async {
   await LocalNotificationService.instance.initialize();
 
   runApp(const ProviderScope(child: MedilinkApp()));
-}
-
-/// Adds sample hospital data to Firebase if none exists
-Future<void> _addSampleHospitalsIfNeeded() async {
-  try {
-    final db = FirebaseDatabase.instance.ref();
-    final snapshot = await db.child('hospitals').get();
-    
-    if (!snapshot.exists) {
-      await db.child('hospitals').set({
-        'hospital_1': {
-          'name': 'City Medical Hospital',
-          'address': '123 Main Street, Downtown District',
-          'contact': '+92-300-1234567',
-          'adminId': 'sample-admin-001',
-          'photoUrl': '',
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-        'hospital_2': {
-          'name': 'Green Valley Medical Center',
-          'address': '456 Park Avenue, Suburb Area',
-          'contact': '+92-300-7654321',
-          'adminId': 'sample-admin-002',
-          'photoUrl': '',
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-        'hospital_3': {
-          'name': 'Wellness Clinic & Diagnostic Center',
-          'address': '789 Health Road, Medical Complex',
-          'contact': '+92-300-9876543',
-          'adminId': 'sample-admin-003',
-          'photoUrl': '',
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-        'hospital_4': {
-          'name': 'Emergency Care Hospital',
-          'address': '321 Relief Lane, City Center',
-          'contact': '+92-300-5555555',
-          'adminId': 'sample-admin-004',
-          'photoUrl': '',
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      });
-    }
-  } catch (e) {
-    // Don't block app startup if this fails
-  }
 }
 
 /// Root widget for the MEDILINK application.

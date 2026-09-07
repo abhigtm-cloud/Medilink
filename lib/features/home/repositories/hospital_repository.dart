@@ -254,11 +254,22 @@ class HospitalRepository {
 
   /// Delete a hospital
   Future<void> deleteHospital(String hospitalId) async {
+    final cleanId = hospitalId.trim();
+    if (cleanId.isEmpty) {
+      throw Exception('Invalid hospital ID: Cannot delete hospital with empty ID');
+    }
     try {
-      await _database.child(_hospitalsPath).child(hospitalId).remove();
-      
-      // Invalidate cache
+      // 1. Remove only the specific hospital node
+      await _database.child(_hospitalsPath).child(cleanId).remove();
+
+      // 2. Cascade delete doctors registered under this hospital
+      try {
+        await _database.child('doctors').child(cleanId).remove();
+      } catch (_) {}
+
+      // 3. Invalidate local cache
       await CacheService.clearHospitals();
+      await CacheService.clearDoctorsByHospital(cleanId);
     } catch (e) {
       throw Exception('Failed to delete hospital: $e');
     }

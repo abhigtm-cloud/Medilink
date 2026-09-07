@@ -143,6 +143,7 @@ class Hospital {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'name': name,
       'address': address,
       'contact': contact,
