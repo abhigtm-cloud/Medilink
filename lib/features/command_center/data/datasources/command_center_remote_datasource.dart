@@ -159,7 +159,23 @@ class CommandCenterRemoteDataSource {
       if (extraData != null) ...extraData,
     };
 
-    // Update in RTDB (guaranteed 200 OK under /hospitals)
+    // 1. Update in-memory emergency cache immediately
+    if (EmergencyRemoteDataSource.localEmergencyRequests.containsKey(requestId)) {
+      final old = EmergencyRemoteDataSource.localEmergencyRequests[requestId]!;
+      final newStatus = EmergencyStatus.fromValue(status);
+      final updated = old.copyWith(
+        status: newStatus,
+        assignedDoctorId: extraData?['assignedDoctorId'] as String? ?? old.assignedDoctorId,
+        assignedAmbulanceId: extraData?['assignedAmbulanceId'] as String? ?? old.assignedAmbulanceId,
+        rejectReason: extraData?['rejectReason'] as String? ?? old.rejectReason,
+        acceptedAt: extraData?['acceptedAt'] != null ? DateTime.tryParse(extraData!['acceptedAt']) : old.acceptedAt,
+        arrivedAt: extraData?['arrivedAt'] != null ? DateTime.tryParse(extraData!['arrivedAt']) : old.arrivedAt,
+        completedAt: extraData?['completedAt'] != null ? DateTime.tryParse(extraData!['completedAt']) : old.completedAt,
+      );
+      EmergencyRemoteDataSource.localEmergencyRequests[requestId] = updated;
+    }
+
+    // 2. Update in RTDB (guaranteed 200 OK under /hospitals)
     try {
       final snap = await _database.child('hospitals').get();
       if (snap.exists && snap.value is Map) {
@@ -187,7 +203,7 @@ class CommandCenterRemoteDataSource {
       }
     } catch (_) {}
 
-    // Update in Firestore
+    // 3. Update in Firestore
     try {
       await _firestore.collection('emergency_requests').doc(requestId).update({
         'status': status,
@@ -208,7 +224,7 @@ class CommandCenterRemoteDataSource {
     await _call('acceptEmergency', {'requestId': requestId});
     await _updateEmergencyState(
       requestId: requestId,
-      status: 'hospitalAccepted',
+      status: EmergencyStatus.accepted.name,
       extraData: {'acceptedAt': DateTime.now().toIso8601String()},
       timelineLabel: 'Hospital Accepted: Emergency medical team mobilized and standing by.',
     );
@@ -218,7 +234,7 @@ class CommandCenterRemoteDataSource {
     await _call('rejectEmergency', {'requestId': requestId, 'reason': reason});
     await _updateEmergencyState(
       requestId: requestId,
-      status: 'rejected',
+      status: EmergencyStatus.rejected.name,
       extraData: {'rejectReason': reason},
       timelineLabel: 'Emergency Request Declined: $reason',
     );
@@ -228,7 +244,7 @@ class CommandCenterRemoteDataSource {
     await _call('assignDoctor', {'requestId': requestId, 'doctorId': doctorId});
     await _updateEmergencyState(
       requestId: requestId,
-      status: 'hospitalAccepted',
+      status: EmergencyStatus.doctorAssigned.name,
       extraData: {'assignedDoctorId': doctorId},
       timelineLabel: 'Doctor Assigned: Dedicated medical specialist prepared for arrival.',
     );
@@ -251,7 +267,7 @@ class CommandCenterRemoteDataSource {
     await _call('markArrived', {'requestId': requestId});
     await _updateEmergencyState(
       requestId: requestId,
-      status: 'arrived',
+      status: EmergencyStatus.reachedHospital.name,
       extraData: {'arrivedAt': DateTime.now().toIso8601String()},
       timelineLabel: 'Patient Arrived: Admitted to emergency trauma unit.',
     );
@@ -261,7 +277,7 @@ class CommandCenterRemoteDataSource {
     await _call('closeEmergency', {'requestId': requestId, 'outcome': outcome});
     await _updateEmergencyState(
       requestId: requestId,
-      status: 'completed',
+      status: EmergencyStatus.completed.name,
       extraData: {'completedAt': DateTime.now().toIso8601String(), 'outcome': outcome},
       timelineLabel: 'Emergency Case Closed: $outcome',
     );

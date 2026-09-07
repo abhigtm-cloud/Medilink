@@ -577,17 +577,15 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
   Widget _buildHospitalCard(Hospital hospital) {
     return GestureDetector(
       onTap: () {
-        if (hospital.id != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DoctorListScreen(
-                hospitalName: hospital.name,
-                hospitalId: hospital.id!,
-              ),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DoctorListScreen(
+              hospitalName: hospital.name,
+              hospitalId: (hospital.id != null && hospital.id!.isNotEmpty) ? hospital.id! : hospital.name,
             ),
-          );
-        }
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -745,17 +743,15 @@ class _UserHomeScreenState extends ConsumerState<UserHomeScreen> {
                               ),
                             ),
                             onPressed: () {
-                              if (hospital.id != null) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => DoctorListScreen(
-                                      hospitalName: hospital.name,
-                                      hospitalId: hospital.id!,
-                                    ),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DoctorListScreen(
+                                    hospitalName: hospital.name,
+                                    hospitalId: (hospital.id != null && hospital.id!.isNotEmpty) ? hospital.id! : hospital.name,
                                   ),
-                                );
-                              }
+                                ),
+                              );
                             },
                             child: const Text(
                               'View Doctors',

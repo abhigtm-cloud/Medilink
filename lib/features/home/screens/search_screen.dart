@@ -195,17 +195,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
             return GestureDetector(
               onTap: () {
-                if (hospital.id != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DoctorListScreen(
-                        hospitalName: hospital.name,
-                        hospitalId: hospital.id!,
-                      ),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DoctorListScreen(
+                      hospitalName: hospital.name,
+                      hospitalId: (hospital.id != null && hospital.id!.isNotEmpty) ? hospital.id! : hospital.name,
                     ),
-                  );
-                }
+                  ),
+                );
               },
               child: Container(
                 margin: const EdgeInsets.only(bottom: 12),

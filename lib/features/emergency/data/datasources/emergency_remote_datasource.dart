@@ -101,6 +101,57 @@ class EmergencyRemoteDataSource {
       winnerDistance = 2.4; // Default ~2.4km distance estimate
     }
 
+    // Fetch user profile details for PatientSnapshot
+    PatientSnapshot? patientSnapshot;
+    try {
+      final user = _auth.currentUser;
+      String pName = user?.displayName ?? 'Patient';
+      String? pPhone = user?.phoneNumber;
+      String? pBlood;
+      int? pAge;
+      List<String> pConditions = [];
+      String? pEmergName;
+      String? pEmergPhone;
+
+      // 1. Query RTDB users/{uid}
+      final userSnap = await _database.child('users').child(uid).get().timeout(const Duration(seconds: 2));
+      if (userSnap.exists && userSnap.value is Map) {
+        final uData = Map<String, dynamic>.from(userSnap.value as Map);
+        pName = uData['name']?.toString() ?? uData['displayName']?.toString() ?? pName;
+        pPhone = uData['phoneNumber']?.toString() ?? uData['phone']?.toString() ?? pPhone;
+        pBlood = uData['bloodGroup']?.toString() ?? uData['bloodType']?.toString();
+        pAge = (uData['age'] as num?)?.toInt();
+        if (uData['medicalConditions'] is List) {
+          pConditions = (uData['medicalConditions'] as List).map((e) => e.toString()).toList();
+        } else if (uData['medicalHistory'] is List) {
+          pConditions = (uData['medicalHistory'] as List).map((e) => e.toString()).toList();
+        }
+        if (uData['emergencyContact'] is Map) {
+          pEmergName = (uData['emergencyContact'] as Map)['name']?.toString();
+          pEmergPhone = (uData['emergencyContact'] as Map)['phone']?.toString();
+        } else {
+          pEmergName = uData['emergencyContactName']?.toString();
+          pEmergPhone = uData['emergencyContactPhone']?.toString();
+        }
+      }
+
+      if ((pName == 'Patient' || pName.isEmpty) && user?.email != null) {
+        pName = user!.email!.split('@').first;
+      }
+
+      patientSnapshot = PatientSnapshot(
+        name: pName,
+        phoneNumber: pPhone,
+        bloodGroup: pBlood,
+        age: pAge,
+        medicalConditions: pConditions,
+        emergencyContactName: pEmergName,
+        emergencyContactPhone: pEmergPhone,
+      );
+    } catch (e) {
+      print('DEBUG: Note fetching patient profile for SOS: $e');
+    }
+
     final priority = (type == EmergencyType.cardiac || type == EmergencyType.breathing)
         ? EmergencyPriority.critical
         : (type == EmergencyType.accident ? EmergencyPriority.high : EmergencyPriority.medium);
@@ -119,6 +170,7 @@ class EmergencyRemoteDataSource {
       selectedHospitalId: winnerHospitalId,
       distanceKm: winnerDistance,
       etaMinutes: eta,
+      patientSnapshot: patientSnapshot,
       createdAt: now,
     );
 

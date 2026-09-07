@@ -188,17 +188,15 @@ class _HospitalMapScreenState extends ConsumerState<HospitalMapScreen> {
                               icon: const Icon(Icons.medical_services, size: 16),
                               label: const Text('View Doctors'),
                               onPressed: () {
-                                if (hospital.id != null) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => DoctorListScreen(
-                                        hospitalName: hospital.name,
-                                        hospitalId: hospital.id!,
-                                      ),
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => DoctorListScreen(
+                                      hospitalName: hospital.name,
+                                      hospitalId: (hospital.id != null && hospital.id!.isNotEmpty) ? hospital.id! : hospital.name,
                                     ),
-                                  );
-                                }
+                                  ),
+                                );
                               },
                             ),
                           ),

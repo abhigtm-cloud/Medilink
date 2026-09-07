@@ -45,19 +45,18 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.3
-          name: "MediLink v1.0.3 Release"
+          tag_name: v1.0.4
+          name: "MediLink v1.0.4 Release"
           draft: false
           prerelease: false
           body: |
-            ## 🏥 MediLink v1.0.3 - Healthcare & Emergency Platform (Latest Fixes)
+            ## 🏥 MediLink v1.0.4 - Healthcare & Emergency Platform (Release Update)
 
-            ### 🚀 Highlights & Fixes in v1.0.3:
-            - **Live Emergency Command Center**: Full RTDB broadcast & instant sync — all hospital admins receive real-time SOS distress alerts regardless of hospital ID mapping.
-            - **Ambulance Fleet Management**: Added Realtime Database backing & hospitalId registration to eliminate null instance / permission errors.
-            - **Staff Hub & Cross-Module Auto-Sync**: Adding doctors or drivers automatically updates Doctor Rosters, Appointment Booking, and Ambulance Dispatch!
-            - **Pharmacy Inventory & Prescriptions**: Fortified image handling and hospital fallback to prevent null instance crashes.
-            - **Hospital Admin Dashboard**: Fully null-safe with Live Emergency Banner and direct Respond button.
+            ### 🚀 Highlights & Fixes in v1.0.4:
+            - **Live Doctor Roster & View Doctors Button**: Fixed doctor catalog linking across hospital cards, map screens, and search. Live real-time sync automatically pulls doctors and allows direct slot booking.
+            - **Emergency Patient GPS & Profile Redirection**: Hospital emergency panel now shows the complete Patient Profile (Name, Phone Number, Blood Group, Age, Medical Conditions, Emergency Contact) along with a prominent 1-tap **"Open Patient Location in Google Maps"** navigation button.
+            - **Approve / Accept SOS Emergency Case**: Fixed the Accept / Approve button state machine in Hospital Command Center — seamlessly transitions status to `accepted`, triggers medical response mobilization, and keeps user tracking updated in real time.
+            - **Ambulance & Staff Hub Cross-Sync**: All database operations fortified with open permissions and real-time fallbacks.
 
             ### 📱 Download & Install:
             Download the `app-release.apk` below directly onto your Android device!

@@ -51,6 +51,10 @@ enum EmergencyStatus {
   noHospitalFound;
 
   static EmergencyStatus fromValue(String? value) {
+    if (value == null) return EmergencyStatus.requested;
+    if (value == 'hospitalAccepted' || value == 'approved') return EmergencyStatus.accepted;
+    if (value == 'arrived') return EmergencyStatus.reachedHospital;
+    if (value == 'enRoute' || value == 'inTransit') return EmergencyStatus.patientEnRoute;
     return EmergencyStatus.values.firstWhere(
       (s) => s.name == value,
       orElse: () => EmergencyStatus.requested,

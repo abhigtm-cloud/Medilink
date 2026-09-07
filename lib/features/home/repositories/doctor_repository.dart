@@ -132,77 +132,103 @@ class DoctorRepository {
     }
   }
   
-  /// Get doctors for a specific hospital (Cache-First for offline support)
+  /// Get doctors for a specific hospital (Cache-First + Multi-source DB lookup)
   Future<List<Doctor>> getDoctorsByHospital(String hospitalId) async {
+    final doctorMap = <String, Doctor>{};
+
     // Try cache first - supports offline mode
     final cachedDoctors = CacheService.getDoctorsByHospital(hospitalId);
     if (cachedDoctors != null && cachedDoctors.isNotEmpty) {
-      try {
-        return (cachedDoctors)
-            .map((item) => Doctor.fromJson(
-                  Map<String, dynamic>.from(item as Map),
-                  docId: (item)['id']?.toString(),
-                ))
-            .toList();
-      } catch (e) {
-        print('DEBUG: Cache parse error for doctors, fetching from Firebase: $e');
-        // Fall through to Firebase
+      for (final item in cachedDoctors) {
+        try {
+          final doc = Doctor.fromJson(
+            Map<String, dynamic>.from(item as Map),
+            docId: (item)['id']?.toString(),
+          );
+          if (doc.id != null) doctorMap[doc.id!] = doc;
+        } catch (_) {}
       }
     }
 
-    // Cache miss, fetch from Firebase
+    // Query Realtime Database paths
     try {
-      print('DEBUG: 🔄 Fetching doctors from Firebase for $hospitalId...');
-      final snapshot = await _database
-          .child(_doctorsPath)
-          .child(hospitalId)
-          .get();
-      
-      if (!snapshot.exists) {
-        print('DEBUG: ℹ️ No doctors found for hospital $hospitalId');
-        return [];
-      }
-      
-      final doctors = <Doctor>[];
-      final data = snapshot.value as Map<dynamic, dynamic>? ?? {};
-      final cacheData = <Map<String, dynamic>>[];
-      
-      data.forEach((key, value) {
-        if (value is Map<dynamic, dynamic>) {
-          try {
-            final doctor = Doctor.fromJson(
-              Map<String, dynamic>.from(value),
-              docId: key,
-            );
-            doctors.add(doctor);
-            cacheData.add(doctor.toJson());
-          } catch (e) {
-            print('DEBUG: Error parsing doctor: $e');
+      // 1. Primary: /doctors/{hospitalId}
+      final snap1 = await _database.child(_doctorsPath).child(hospitalId).get();
+      if (snap1.exists && snap1.value is Map) {
+        final data = snap1.value as Map<dynamic, dynamic>;
+        data.forEach((k, v) {
+          if (v is Map) {
+            try {
+              final doc = Doctor.fromJson(Map<String, dynamic>.from(v), docId: k.toString());
+              if (doc.id != null) doctorMap[doc.id!] = doc;
+            } catch (_) {}
           }
+        });
+      }
+
+      // 2. Secondary: /hospitals/{hospitalId}/doctors
+      final snap2 = await _database.child('hospitals').child(hospitalId).child('doctors').get();
+      if (snap2.exists && snap2.value is Map) {
+        final data = snap2.value as Map<dynamic, dynamic>;
+        data.forEach((k, v) {
+          if (v is Map) {
+            try {
+              final doc = Doctor.fromJson(Map<String, dynamic>.from(v), docId: k.toString());
+              if (doc.id != null) doctorMap[doc.id!] = doc;
+            } catch (_) {}
+          }
+        });
+      }
+
+      // 3. Staff roster: /hospitals/{hospitalId}/staff (where role == doctor)
+      final snap3 = await _database.child('hospitals').child(hospitalId).child('staff').get();
+      if (snap3.exists && snap3.value is Map) {
+        final data = snap3.value as Map<dynamic, dynamic>;
+        data.forEach((k, v) {
+          if (v is Map && v['role']?.toString().toLowerCase() == 'doctor') {
+            try {
+              final doc = Doctor.fromJson(Map<String, dynamic>.from(v), docId: k.toString());
+              if (doc.id != null && !doctorMap.containsKey(doc.id)) {
+                doctorMap[doc.id!] = doc;
+              }
+            } catch (_) {}
+          }
+        });
+      }
+
+      // 4. If still empty, check all /doctors
+      if (doctorMap.isEmpty) {
+        final snapAll = await _database.child(_doctorsPath).get();
+        if (snapAll.exists && snapAll.value is Map) {
+          final data = snapAll.value as Map<dynamic, dynamic>;
+          data.forEach((k, v) {
+            if (v is Map) {
+              if (v.containsKey('name') && v.containsKey('specialization')) {
+                final doc = Doctor.fromJson(Map<String, dynamic>.from(v), docId: k.toString());
+                if (doc.id != null) doctorMap[doc.id!] = doc;
+              } else {
+                v.forEach((docKey, docVal) {
+                  if (docVal is Map) {
+                    try {
+                      final doc = Doctor.fromJson(Map<String, dynamic>.from(docVal), docId: docKey.toString());
+                      if (doc.id != null) doctorMap[doc.id!] = doc;
+                    } catch (_) {}
+                  }
+                });
+              }
+            }
+          });
         }
-      });
-      
-      // Cache for offline access
-      if (doctors.isNotEmpty) {
-        await CacheService.setDoctorsByHospital(hospitalId, cacheData);
-        print('DEBUG: ✅ Cached ${doctors.length} doctors for $hospitalId');
       }
-      
-      return doctors;
+
+      final list = doctorMap.values.toList();
+      if (list.isNotEmpty) {
+        await CacheService.setDoctorsByHospital(hospitalId, list.map((d) => d.toJson()).toList());
+      }
+      return list;
     } catch (e) {
-      print('DEBUG: 🔥 Firebase error fetching doctors: $e');
-      // If Firebase fails, try cache as fallback
-      final cachedDoctors = CacheService.getDoctorsByHospital(hospitalId);
-      if (cachedDoctors != null && cachedDoctors.isNotEmpty) {
-        print('DEBUG: ⚠️ Using offline cache as fallback');
-        return (cachedDoctors)
-            .map((item) => Doctor.fromJson(
-                  Map<String, dynamic>.from(item as Map),
-                  docId: (item)['id'],
-                ))
-            .toList();
-      }
-      throw Exception('Failed to fetch doctors: $e');
+      print('DEBUG: Note fetching doctors from Firebase: $e');
+      return doctorMap.values.toList();
     }
   }
   
@@ -300,21 +326,62 @@ class DoctorRepository {
 
   /// Watch all doctors for a hospital live
   Stream<List<Doctor>> watchDoctorsByHospital(String hospitalId) {
-    return _database
-        .child(_doctorsPath)
-        .child(hospitalId)
-        .onValue
-        .map((event) {
-      if (!event.snapshot.exists || event.snapshot.value == null) return [];
-      final data = Map<dynamic, dynamic>.from(event.snapshot.value as Map);
-      final list = <Doctor>[];
-      data.forEach((key, val) {
-        if (val is Map) {
-          list.add(Doctor.fromJson(Map<String, dynamic>.from(val), docId: key.toString()));
-        }
-      });
-      return list;
-    });
+    late StreamController<List<Doctor>> controller;
+    final Map<String, Doctor> doctorMap = {};
+
+    void emitDoctors() {
+      if (!controller.isClosed) {
+        controller.add(doctorMap.values.toList());
+      }
+    }
+
+    controller = StreamController<List<Doctor>>.broadcast(
+      onListen: () {
+        // 1. Initial multi-source fetch
+        getDoctorsByHospital(hospitalId).then((docs) {
+          for (final d in docs) {
+            if (d.id != null) doctorMap[d.id!] = d;
+          }
+          emitDoctors();
+        }).catchError((_) {});
+
+        // 2. Realtime listener on /doctors/{hospitalId}
+        _database.child(_doctorsPath).child(hospitalId).onValue.listen((event) {
+          if (event.snapshot.exists && event.snapshot.value is Map) {
+            final data = event.snapshot.value as Map<dynamic, dynamic>;
+            data.forEach((k, v) {
+              if (v is Map) {
+                try {
+                  final doc = Doctor.fromJson(Map<String, dynamic>.from(v), docId: k.toString());
+                  if (doc.id != null) doctorMap[doc.id!] = doc;
+                } catch (_) {}
+              }
+            });
+            emitDoctors();
+          }
+        }, onError: (_) {});
+
+        // 3. Realtime listener on /hospitals/{hospitalId}/staff
+        _database.child('hospitals').child(hospitalId).child('staff').onValue.listen((event) {
+          if (event.snapshot.exists && event.snapshot.value is Map) {
+            final data = event.snapshot.value as Map<dynamic, dynamic>;
+            data.forEach((k, v) {
+              if (v is Map && v['role']?.toString().toLowerCase() == 'doctor') {
+                try {
+                  final doc = Doctor.fromJson(Map<String, dynamic>.from(v), docId: k.toString());
+                  if (doc.id != null && !doctorMap.containsKey(doc.id)) {
+                    doctorMap[doc.id!] = doc;
+                  }
+                } catch (_) {}
+              }
+            });
+            emitDoctors();
+          }
+        }, onError: (_) {});
+      },
+    );
+
+    return controller.stream;
   }
 
   /// Delete a doctor

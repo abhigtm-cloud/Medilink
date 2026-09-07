@@ -19,7 +19,7 @@ class DoctorListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final doctorsAsync = ref.watch(getDoctorsByHospitalProvider(hospitalId));
+    final doctorsAsync = ref.watch(watchDoctorsByHospitalProvider(hospitalId));
 
     return Scaffold(
       backgroundColor: AppColors.surfaceLight,
@@ -51,47 +51,78 @@ class DoctorListScreen extends ConsumerWidget {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh Doctors',
+            onPressed: () {
+              ref.refresh(watchDoctorsByHospitalProvider(hospitalId));
+              ref.refresh(getDoctorsByHospitalProvider(hospitalId));
+            },
+          ),
+        ],
       ),
-      body: doctorsAsync.when(
-        data: (doctors) {
-          if (doctors.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.refresh(watchDoctorsByHospitalProvider(hospitalId));
+          ref.refresh(getDoctorsByHospitalProvider(hospitalId));
+        },
+        child: doctorsAsync.when(
+          data: (doctors) {
+            if (doctors.isEmpty) {
+              return ListView(
                 children: [
-                  Icon(Icons.person_outline, size: 48, color: AppColors.borderLight),
-                  const SizedBox(height: 12),
-                  Text(
-                    'No doctors available',
-                    style: TextStyle(
-                      color: AppColors.textSecondaryLight,
-                      fontSize: 14,
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.person_outline, size: 56, color: AppColors.borderLight),
+                        const SizedBox(height: 14),
+                        Text(
+                          'No doctors registered yet for $hospitalName',
+                          style: TextStyle(
+                            color: AppColors.textSecondaryLight,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.refresh, size: 18),
+                          label: const Text('Refresh'),
+                          onPressed: () {
+                            ref.refresh(watchDoctorsByHospitalProvider(hospitalId));
+                            ref.refresh(getDoctorsByHospitalProvider(hospitalId));
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ],
-              ),
-            );
-          }
+              );
+            }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: doctors.length,
-            itemBuilder: (context, index) {
-              final doctor = doctors[index];
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DoctorBookingScreen(
-                        hospitalId: hospitalId,
-                        doctorId: doctor.id!,
-                        doctorName: doctor.name,
-                        specialization: doctor.specialization,
+            return ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: doctors.length,
+              itemBuilder: (context, index) {
+                final doctor = doctors[index];
+                final docId = doctor.id ?? 'doc_$index';
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DoctorBookingScreen(
+                          hospitalId: hospitalId,
+                          doctorId: docId,
+                          doctorName: doctor.name,
+                          specialization: doctor.specialization,
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
                 child: Container(
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(

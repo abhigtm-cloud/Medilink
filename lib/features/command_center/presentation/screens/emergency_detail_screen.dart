@@ -111,6 +111,8 @@ class EmergencyDetailScreen extends ConsumerWidget {
     final location = request.patientLocation;
 
     return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -119,7 +121,13 @@ class EmergencyDetailScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Patient Info & Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Row(
+                  children: [
+                    Icon(Icons.person_pin_circle, color: AppColors.primary, size: 22),
+                    SizedBox(width: 8),
+                    Text('Patient Info & Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
                 if (request.distanceKm != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -138,69 +146,155 @@ class EmergencyDetailScreen extends ConsumerWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
+
+            // Live Location Card & Navigation Button
             if (location != null) ...[
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.red.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.withOpacity(0.25)),
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    const Icon(Icons.location_on, color: Colors.red, size: 28),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Patient GPS Coordinates',
-                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, color: Colors.red, size: 28),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Patient Real-Time GPS Coordinates',
+                                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                              ),
+                              Text(
+                                'Lat: ${location.latitude.toStringAsFixed(5)}, Lng: ${location.longitude.toStringAsFixed(5)}',
+                                style: const TextStyle(fontSize: 12, color: Colors.black87),
+                              ),
+                            ],
                           ),
-                          Text(
-                            'Lat: ${location.latitude.toStringAsFixed(5)}, Lng: ${location.longitude.toStringAsFixed(5)}',
-                            style: const TextStyle(fontSize: 12, color: Colors.black87),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.map, color: AppColors.primary),
-                      tooltip: 'View Patient on Map',
-                      onPressed: () {
-                        LocationService.openGoogleMaps(
-                          latitude: location.latitude,
-                          longitude: location.longitude,
-                          locationName: 'Emergency Patient Location',
-                        );
-                      },
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.navigation, color: Colors.white, size: 18),
+                        label: const Text(
+                          'Open Patient Location in Google Maps',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.shade700,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () {
+                          LocationService.openGoogleMaps(
+                            latitude: location.latitude,
+                            longitude: location.longitude,
+                            locationName: 'Emergency Patient: ${snapshot?.name ?? "Patient"}',
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
             ],
+
+            // Patient Medical & Contact Details
             if (snapshot == null)
-              const Text('Patient medical details unavailable')
-            else ...[
-              Text(snapshot.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-              if (snapshot.age != null) Text('Age: ${snapshot.age}'),
-              if (snapshot.bloodGroup != null) Text('Blood Group: ${snapshot.bloodGroup}'),
-              if (snapshot.medicalConditions.isNotEmpty)
-                Text('Medical Conditions: ${snapshot.medicalConditions.join(', ')}'),
-              if (snapshot.emergencyContactName != null)
-                Text(
-                  'Emergency Contact: ${snapshot.emergencyContactName} '
-                  '(${snapshot.emergencyContactPhone ?? '-'})',
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              if (snapshot.phoneNumber != null) ...[
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.call),
-                  label: Text('Call Patient (${snapshot.phoneNumber})'),
-                  onPressed: () => launchUrl(Uri.parse('tel:${snapshot.phoneNumber}')),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Patient UID: ${request.patientUid}',
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text('Detailed profile snapshot loading from database...'),
+                  ],
+                ),
+              )
+            else ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.account_circle, color: AppColors.primary, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            snapshot.name,
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                          ),
+                        ),
+                        if (snapshot.bloodGroup != null && snapshot.bloodGroup!.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.red.shade300),
+                            ),
+                            child: Text(
+                              'Blood: ${snapshot.bloodGroup}',
+                              style: TextStyle(color: Colors.red.shade800, fontWeight: FontWeight.bold, fontSize: 11),
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (snapshot.age != null) ...[
+                      const SizedBox(height: 6),
+                      Text('• Age: ${snapshot.age} years', style: const TextStyle(fontSize: 13)),
+                    ],
+                    if (snapshot.medicalConditions.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        '• Medical Conditions: ${snapshot.medicalConditions.join(', ')}',
+                        style: TextStyle(fontSize: 13, color: Colors.orange.shade900, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                    if (snapshot.emergencyContactName != null && snapshot.emergencyContactName!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        '• Emergency Contact: ${snapshot.emergencyContactName} (${snapshot.emergencyContactPhone ?? 'No Phone'})',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (snapshot.phoneNumber != null && snapshot.phoneNumber!.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.call, color: AppColors.primary),
+                    label: Text('Call Patient (${snapshot.phoneNumber})', style: const TextStyle(fontWeight: FontWeight.w600)),
+                    onPressed: () => launchUrl(Uri.parse('tel:${snapshot.phoneNumber}')),
+                  ),
                 ),
               ],
             ],
@@ -256,27 +350,49 @@ class _ActionBarState extends ConsumerState<_ActionBar> {
     final status = widget.request.status;
     final repo = ref.read(commandCenterRepositoryProvider);
 
-    if (status == EmergencyStatus.hospitalAssigned) {
+    // Initial state requiring hospital approval
+    if (status == EmergencyStatus.hospitalAssigned ||
+        status == EmergencyStatus.requested ||
+        status == EmergencyStatus.searchingHospital) {
       return Row(
         children: [
           Expanded(
             child: ElevatedButton.icon(
-              icon: const Icon(Icons.check),
-              label: const Text('Accept'),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+              icon: const Icon(Icons.check_circle, color: Colors.white),
+              label: const Text('Accept / Approve', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
               onPressed: _busy
                   ? null
                   : () => _run(() async {
                         final result = await repo.acceptEmergency(widget.request.id);
-                        result.match(_showFailure, (_) {});
+                        result.match(
+                          _showFailure,
+                          (_) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  backgroundColor: AppColors.success,
+                                  content: Text('Emergency Case Approved! Medical team mobilized.'),
+                                ),
+                              );
+                            }
+                          },
+                        );
                       }),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: OutlinedButton.icon(
-              icon: const Icon(Icons.close, color: AppColors.error),
-              label: const Text('Reject', style: TextStyle(color: AppColors.error)),
+              icon: const Icon(Icons.cancel, color: AppColors.error),
+              label: const Text('Reject', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                side: const BorderSide(color: AppColors.error),
+              ),
               onPressed: _busy ? null : () => _showReasonDialog(context, 'Reject Emergency',
                   (reason) => repo.rejectEmergency(widget.request.id, reason)),
             ),
@@ -285,11 +401,15 @@ class _ActionBarState extends ConsumerState<_ActionBar> {
       );
     }
 
-    if (status == EmergencyStatus.accepted || status == EmergencyStatus.doctorAssigned) {
+    if (status == EmergencyStatus.accepted ||
+        status == EmergencyStatus.doctorAssigned ||
+        status == EmergencyStatus.ambulanceDispatched ||
+        status == EmergencyStatus.hospitalReady ||
+        status == EmergencyStatus.patientEnRoute) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (status == EmergencyStatus.accepted)
+          if (status == EmergencyStatus.accepted || widget.request.assignedDoctorId == null)
             ElevatedButton.icon(
               icon: const Icon(Icons.medical_services),
               label: const Text('Assign Doctor'),

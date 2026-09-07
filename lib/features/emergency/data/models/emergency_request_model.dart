@@ -86,8 +86,28 @@ class EmergencyRequestModel extends EmergencyRequest {
     DateTime? dt(String key) =>
         json[key] != null ? DateTime.tryParse(json[key] as String) : null;
 
+    PatientSnapshot? patientSnap;
+    if (json['patientSnapshot'] is Map) {
+      final snapData = json['patientSnapshot'] as Map;
+      patientSnap = PatientSnapshot(
+        name: snapData['name']?.toString() ?? 'Patient',
+        phoneNumber: snapData['phoneNumber']?.toString() ?? snapData['phone']?.toString(),
+        bloodGroup: snapData['bloodGroup']?.toString(),
+        age: (snapData['age'] as num?)?.toInt(),
+        medicalConditions: (snapData['medicalConditions'] as List?)?.map((e) => e.toString()).toList() ?? const [],
+        emergencyContactName: snapData['emergencyContactName']?.toString() ?? (snapData['emergencyContact'] as Map?)?['name']?.toString(),
+        emergencyContactPhone: snapData['emergencyContactPhone']?.toString() ?? (snapData['emergencyContact'] as Map?)?['phone']?.toString(),
+      );
+    }
+
+    final instructions = (json['staffInstructions'] is List)
+        ? (json['staffInstructions'] as List).map((e) => e.toString()).toList()
+        : ((json['staffInstructions'] is Map)
+            ? (json['staffInstructions'] as Map).values.map((e) => e.toString()).toList()
+            : const <String>[]);
+
     return EmergencyRequestModel(
-      id: json['id'] as String,
+      id: json['id'] as String? ?? 'sos_${DateTime.now().millisecondsSinceEpoch}',
       patientUid: json['patientUid'] as String? ?? '',
       status: EmergencyStatus.fromValue(json['status'] as String?),
       priority: EmergencyPriority.fromValue(json['priority'] as String?),
@@ -102,7 +122,17 @@ class EmergencyRequestModel extends EmergencyRequest {
       selectedHospitalId: json['selectedHospitalId'] as String?,
       distanceKm: (json['distanceKm'] as num?)?.toDouble(),
       etaMinutes: (json['etaMinutes'] as num?)?.toDouble(),
+      assignedDoctorId: json['assignedDoctorId'] as String?,
+      assignedAmbulanceId: json['assignedAmbulanceId'] as String?,
+      cancelReason: json['cancelReason'] as String?,
+      rejectReason: json['rejectReason'] as String?,
+      patientSnapshot: patientSnap,
+      staffInstructions: instructions,
       createdAt: dt('createdAt'),
+      acceptedAt: dt('acceptedAt'),
+      arrivedAt: dt('arrivedAt'),
+      completedAt: dt('completedAt'),
+      cancelledAt: dt('cancelledAt'),
     );
   }
 
@@ -166,7 +196,25 @@ class EmergencyRequestModel extends EmergencyRequest {
       'selectedHospitalId': selectedHospitalId,
       'distanceKm': distanceKm,
       'etaMinutes': etaMinutes,
+      if (assignedDoctorId != null) 'assignedDoctorId': assignedDoctorId,
+      if (assignedAmbulanceId != null) 'assignedAmbulanceId': assignedAmbulanceId,
+      if (cancelReason != null) 'cancelReason': cancelReason,
+      if (rejectReason != null) 'rejectReason': rejectReason,
+      if (patientSnapshot != null)
+        'patientSnapshot': {
+          'name': patientSnapshot!.name,
+          'phoneNumber': patientSnapshot!.phoneNumber,
+          'bloodGroup': patientSnapshot!.bloodGroup,
+          'age': patientSnapshot!.age,
+          'medicalConditions': patientSnapshot!.medicalConditions,
+          'emergencyContactName': patientSnapshot!.emergencyContactName,
+          'emergencyContactPhone': patientSnapshot!.emergencyContactPhone,
+        },
       'createdAt': createdAt?.toIso8601String(),
+      if (acceptedAt != null) 'acceptedAt': acceptedAt?.toIso8601String(),
+      if (arrivedAt != null) 'arrivedAt': arrivedAt?.toIso8601String(),
+      if (completedAt != null) 'completedAt': completedAt?.toIso8601String(),
+      if (cancelledAt != null) 'cancelledAt': cancelledAt?.toIso8601String(),
     };
   }
 }
